@@ -138,11 +138,9 @@ def _api_get(url, params, max_retries=5):
     return {}
 
 
-def get_user_contributions(username, limit=500):
-    """
-    Fetch the last `limit` contributions for a user on nlwiki.
-    Returns a list of contribution dicts with title, sizediff, timestamp, etc.
-    """
+def get_user_contributions(username, limit=500, domain="nl.wikipedia.org"):
+    """Fetch recent contributions for a user from a specific domain."""
+    api_url = f"https://{domain}/w/api.php"
     contributions = []
     params = {
         "action": "query",
@@ -155,7 +153,7 @@ def get_user_contributions(username, limit=500):
     }
 
     while len(contributions) < limit:
-        data = _api_get(NL_API, params.copy())
+        data = _api_get(api_url, params.copy())
         if "query" not in data or "usercontribs" not in data["query"]:
             break
 
@@ -209,8 +207,9 @@ def aggregate_contributions(contributions):
     return sorted_articles
 
 
-def get_article_last_revision(title, api_url=NL_API):
+def get_article_last_revision(title, domain="nl.wikipedia.org"):
     """Get the last revision timestamp and size for an article. Returns None if it's a redirect."""
+    api_url = f"https://{domain}/w/api.php"
     params = {
         "action": "query",
         "titles": title,
@@ -240,16 +239,17 @@ def get_article_last_revision(title, api_url=NL_API):
     return None
 
 
-def get_langlinks(title):
-    """Get English, German, French, and Spanish interwiki links for a NL article."""
+def get_langlinks(title, domain="nl.wikipedia.org"):
+    """Get interwiki links for an article."""
+    api_url = f"https://{domain}/w/api.php"
     params = {
         "action": "query",
         "titles": title,
         "prop": "langlinks",
-        "lllang": "en|de|fr|es",
+        "lllang": "en|de|fr|es|nl|it|pl|pt",
         "lllimit": "20",
     }
-    data = _api_get(NL_API, params)
+    data = _api_get(api_url, params)
     pages = data.get("query", {}).get("pages", {})
     links = {}
     for page_id, page_data in pages.items():
@@ -284,14 +284,19 @@ def get_article_size_at_date(title, date_str, api_url):
     return None
 
 
-def check_crosswiki_growth(title, nl_last_edit_ts):
+def check_crosswiki_growth(title, nl_last_edit, source_domain="nl.wikipedia.org", compare_langs=None):
     """
-    Compare the growth of EN/DE/FR/ES versions vs. NL in the last 6 months.
-    Returns a list of reasons if a foreign wiki has grown significantly.
+    Check if English, German, French, or Spanish versions have significant updates 
+    since the last NL edit.
     """
-    reasons = []
-    langlinks = get_langlinks(title)
+    if compare_langs is None:
+        compare_langs = ["en", "de", "fr", "es"]
+        
+    langlinks = get_langlinks(title, domain=source_domain)
+    if not langlinks:
+        return []
 
+    reasons = []
     now = datetime.now(timezone.utc)
     six_months_ago = (now - timedelta(days=180)).strftime("%Y-%m-%dT%H:%M:%SZ")
 

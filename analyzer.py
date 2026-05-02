@@ -23,12 +23,12 @@ from database import get_hidden_articles
 logger = logging.getLogger(__name__)
 
 
-def analyze_article(article, report_func=None):
+def analyze_article(article, target_domain="nl.wikipedia.org", compare_langs=None, report_func=None):
     """Deep analysis for a single article."""
     title = article["title"]
     try:
-        # Get NL article's last revision info
-        nl_rev = get_article_last_revision(title)
+        # Get target article's last revision info
+        nl_rev = get_article_last_revision(title, domain=target_domain)
         if not nl_rev:
             return None
 
@@ -44,7 +44,7 @@ def analyze_article(article, report_func=None):
 
         # Cross-wiki growth check
         try:
-            crosswiki_reasons = check_crosswiki_growth(title, nl_last_edit)
+            crosswiki_reasons = check_crosswiki_growth(title, nl_last_edit, source_domain=target_domain, compare_langs=compare_langs)
             reasons.extend(crosswiki_reasons)
         except Exception as e:
             logger.warning(f"Cross-wiki check failed for {title}: {e}")
@@ -75,18 +75,25 @@ def analyze_article(article, report_func=None):
         return None
 
 
-def analyze_user(username, max_contribs=2500, top_n=100, progress_callback=None):
+def analyze_user(username, max_contribs=2500, top_n=100, target_wiki="nl.wikipedia.org", compare_langs=None, progress_callback=None):
     """
     Full analysis pipeline for a Wikipedia user.
     """
+    if compare_langs is None:
+        compare_langs = ["en", "de", "fr", "es"]
+
+    target_domain = target_wiki
+    if not target_domain.endswith(".wikipedia.org"):
+        target_domain = f"{target_wiki}.wikipedia.org"
+
     def report(step, total, msg):
         if progress_callback:
             progress_callback(step, total, msg)
         logger.info(f"[{step}/{total}] {msg}")
 
     # Step 1: Fetch user contributions
-    report(1, 4, f"Bijdragen ophalen van {username}...")
-    contributions = get_user_contributions(username, limit=max_contribs)
+    report(1, 4, f"Bijdragen ophalen van {username} op {target_domain}...")
+    contributions = get_user_contributions(username, limit=max_contribs, domain=target_domain)
     if not contributions:
         return []
 
@@ -110,17 +117,12 @@ def analyze_user(username, max_contribs=2500, top_n=100, progress_callback=None)
 
     # Use ThreadPoolExecutor to speed up API-bound tasks
     with ThreadPoolExecutor(max_workers=5) as executor:
-        future_to_article = {executor.submit(analyze_article, article): article for article in top_articles}
-        
-        completed = 0
-        for future in as_completed(future_to_article):
-            completed += 1
+        futures = {executor.submit(analyze_article, art, target_domain=target_domain, compare_langs=compare_langs): art for art in top_articles}
+        for i, future in enumerate(as_completed(futures)):
             res = future.result()
             if res:
                 results.append(res)
-            
-            if completed % 5 == 0 or completed == total_articles:
-                report(3, 4, f"Voortgang: {completed}/{total_articles} artikelen gecontroleerd")
+            report(3, 4, f"Geanalyseerd: {i+1}/{total_articles} artikelen...")
 
     # Step 4: Sort by priority score
     report(4, 4, "Resultaten sorteren...")

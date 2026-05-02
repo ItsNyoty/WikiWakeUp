@@ -26,6 +26,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from requests_oauthlib import OAuth2Session
 from analyzer import analyze_user
 from database import init_db, log_analysis, get_admin_stats, hide_article, unhide_article, get_hidden_articles
+from i18n import get_text
 import threading
 import uuid
 
@@ -137,19 +138,36 @@ def get_current_user():
     """Get the currently logged-in username from the session."""
     return flask.session.get("username")
 
+def is_logged_in():
+    """Check if user is logged in."""
+    return get_current_user() is not None
+
 
 # --- Routes ---
 
 @app.route("/")
 def index():
-    """Serve the main page."""
-    user = get_current_user()
+    """Main page."""
+    lang = flask.session.get("lang", "nl")
+    
+    # Helper for templates
+    def _(key):
+        return get_text(lang, key)
+
     return flask.render_template(
         "index.html",
         oauth_enabled=OAUTH_ENABLED,
-        logged_in=user is not None,
-        username=user,
+        logged_in=is_logged_in(),
+        username=get_current_user(),
+        lang=lang,
+        _= _
     )
+
+@app.route("/set_lang/<lang>")
+def set_lang(lang):
+    if lang in ["nl", "en", "fr", "es"]:
+        flask.session["lang"] = lang
+    return flask.redirect(flask.request.referrer or flask.url_for("index"))
 
 
 @app.route("/login")
@@ -271,17 +289,20 @@ def api_analyze():
     except (ValueError, TypeError):
         top = 100
 
+    target_wiki = flask.request.args.get("target_wiki", "nl.wikipedia.org")
+    compare_langs = flask.request.args.get("compare_langs", "en,de,fr,es").split(",")
+
     job_id = str(uuid.uuid4())
     analysis_jobs[job_id] = {"status": "pending", "progress": 0, "message": "Wachten in wachtrij..."}
 
-    def run_analysis_task(jid, uname, lmt, tp):
+    def run_analysis_task(jid, uname, lmt, tp, twiki, clangs):
         try:
             def progress_update(step, total_steps, msg):
                 analysis_jobs[jid]["progress"] = int((step / total_steps) * 100)
                 analysis_jobs[jid]["message"] = msg
 
             analysis_jobs[jid]["status"] = "running"
-            results = analyze_user(uname, max_contribs=lmt, top_n=tp, progress_callback=progress_update)
+            results = analyze_user(uname, max_contribs=lmt, top_n=tp, target_wiki=twiki, compare_langs=clangs, progress_callback=progress_update)
             
             # Log to database
             try:
@@ -297,7 +318,7 @@ def api_analyze():
             analysis_jobs[jid]["status"] = "failed"
             analysis_jobs[jid]["error"] = str(e)
 
-    thread = threading.Thread(target=run_analysis_task, args=(job_id, username, limit, top))
+    thread = threading.Thread(target=run_analysis_task, args=(job_id, username, limit, top, target_wiki, compare_langs))
     thread.start()
 
     return flask.jsonify({"job_id": job_id})

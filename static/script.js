@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const usernameInput = document.getElementById('usernameInput');
     const limitSelect = document.getElementById('limitSelect');
     const topSelect = document.getElementById('topSelect');
+    const targetWikiSelect = document.getElementById('targetWikiSelect');
     
     const searchSection = document.getElementById('searchSection');
     const loadingSection = document.getElementById('loadingSection');
@@ -48,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatDate(dateStr) {
         if (!dateStr) return '-';
         const d = new Date(dateStr);
-        return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', year: 'numeric' });
+        return d.toLocaleDateString(window.WIKI_CONFIG.lang === 'nl' ? 'nl-NL' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' });
     }
 
     // Poll job status
@@ -61,25 +62,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadingBarFill.style.width = `${job.progress}%`;
                     progressPercent.textContent = `${job.progress}%`;
                     loadingMessage.textContent = job.message;
-                    
-                    // Estimate steps based on message
-                    if (job.message.includes('Bijdragen')) progressStep.textContent = 'STAP 1/4';
-                    else if (job.message.includes('Deep analysis') || job.message.includes('controleren')) progressStep.textContent = 'STAP 3/4';
-                    else if (job.message.includes('sorteren')) progressStep.textContent = 'STAP 4/4';
-                    
+                    progressStep.textContent = job.progress < 25 ? '1/4' : (job.progress < 50 ? '2/4' : (job.progress < 90 ? '3/4' : '4/4'));
                 } else if (job.status === 'completed') {
                     clearInterval(pollingInterval);
                     renderResults(job.results);
                     showSection(resultsSection);
                 } else if (job.status === 'failed') {
                     clearInterval(pollingInterval);
-                    errorMessage.textContent = job.error || 'Er is een onbekende fout opgetreden tijdens de analyse.';
+                    errorMessage.textContent = job.error || 'Error during analysis.';
                     showSection(errorSection);
                 }
             })
             .catch(err => {
                 clearInterval(pollingInterval);
-                errorMessage.textContent = 'Fout bij het ophalen van de status: ' + err.message;
+                errorMessage.textContent = 'Error fetching status: ' + err.message;
                 showSection(errorSection);
             });
     }
@@ -99,15 +95,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const limit = limitSelect.value;
         const top = topSelect.value;
+        const targetWiki = targetWikiSelect.value;
+        
+        // Get compare langs from settings
+        const compareLangs = Array.from(document.querySelectorAll('input[name="compare_lang"]:checked'))
+                                  .map(cb => cb.value)
+                                  .join(',');
 
         showSection(loadingSection);
         loadingBarFill.style.width = '0%';
         progressPercent.textContent = '0%';
-        progressStep.textContent = 'STAP 1/4';
-        loadingMessage.textContent = `Bezig met aanvragen van analyse voor ${username}...`;
+        loadingMessage.textContent = `Requesting analysis...`;
 
         try {
-            const response = await fetch(`/api/analyze?user=${encodeURIComponent(username)}&limit=${limit}&top=${top}`);
+            const url = `/api/analyze?user=${encodeURIComponent(username)}&limit=${limit}&top=${top}&target_wiki=${targetWiki}&compare_langs=${compareLangs}`;
+            const response = await fetch(url);
             const data = await response.json();
 
             if (data.error) {
@@ -121,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pollingInterval = setInterval(() => pollJobStatus(jobId), 2000);
 
         } catch (err) {
-            errorMessage.textContent = 'Er is een fout opgetreden bij het verbinden met de server.';
+            errorMessage.textContent = 'Error connecting to server.';
             showSection(errorSection);
         }
     });
@@ -133,23 +135,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (results.length === 0) {
             resultsTable.classList.add('hidden');
             emptyState.classList.remove('hidden');
-            resultsSubtitle.textContent = 'Geen verouderde artikelen gevonden.';
+            resultsSubtitle.textContent = 'No stale articles found.';
             return;
         }
 
         resultsTable.classList.remove('hidden');
         emptyState.classList.add('hidden');
-        resultsSubtitle.textContent = `${results.length} artikelen gevonden die mogelijk een update nodig hebben.`;
+        resultsSubtitle.textContent = `${results.length} articles found.`;
 
         results.forEach((res, index) => {
             const tr = document.createElement('tr');
-            tr.className = 'hover:bg-gray-800/40 transition-colors group';
+            tr.className = 'hover:bg-wm-bg-base transition-colors group';
             
             // Priority Class
-            let priorityClass = 'text-gray-400 bg-gray-800/50';
-            if (res.priority_score > 60) priorityClass = 'text-red-400 bg-red-500/10 border-red-500/20';
-            else if (res.priority_score > 40) priorityClass = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-            else if (res.priority_score > 20) priorityClass = 'text-blue-400 bg-blue-500/10 border-blue-500/20';
+            let priorityColor = 'text-wm-gray-secondary border-wm-gray-border';
+            if (res.priority_score > 60) priorityColor = 'text-wm-red border-red-200 bg-red-50';
+            else if (res.priority_score > 40) priorityColor = 'text-amber-600 border-amber-200 bg-amber-50';
+            else if (res.priority_score > 20) priorityColor = 'text-wm-blue border-blue-200 bg-blue-50';
 
             const reasonsHtml = res.reasons.map(r => {
                 let badgeClass = 'bg-gray-100 text-gray-700 border-gray-200';
@@ -160,43 +162,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold mr-1.5 mb-1 border ${badgeClass}">${r.msg}</span>`;
             }).join('');
 
-            // Score breakdown tooltip content
             const b = res.score_breakdown || {};
             const breakdownHtml = `
                 <div class="text-[10px] space-y-1 p-1">
-                    <div class="flex justify-between gap-4"><span>Staleness:</span><span class="font-bold text-white">${b.staleness || 0}</span></div>
-                    <div class="flex justify-between gap-4"><span>Wikidata:</span><span class="font-bold text-emerald-400">+${b.wikidata || 0}</span></div>
-                    <div class="flex justify-between gap-4"><span>Cross-Wiki:</span><span class="font-bold text-purple-400">+${b.crosswiki || 0}</span></div>
-                    <div class="flex justify-between gap-4"><span>No Wikidata:</span><span class="font-bold text-amber-400">+${b.nowikidata || 0}</span></div>
+                    <div class="flex justify-between gap-4"><span>Time:</span><span class="font-bold text-gray-900">${b.staleness || 0}</span></div>
+                    <div class="flex justify-between gap-4"><span>Wikidata:</span><span class="font-bold text-emerald-600">+${b.wikidata || 0}</span></div>
+                    <div class="flex justify-between gap-4"><span>Cross-Wiki:</span><span class="font-bold text-purple-600">+${b.crosswiki || 0}</span></div>
+                    <div class="flex justify-between gap-4"><span>Other:</span><span class="font-bold text-amber-600">+${b.nowikidata || 0}</span></div>
                 </div>
             `;
 
             tr.innerHTML = `
-                <td class="px-6 py-5 text-center text-gray-600 font-mono text-xs">${index + 1}</td>
-                <td class="px-6 py-5">
-                    <a href="https://nl.wikipedia.org/wiki/${encodeURIComponent(res.title)}" target="_blank" 
-                       class="text-blue-400 hover:text-blue-300 font-bold transition-colors">
+                <td class="px-6 py-4 text-center text-wm-gray-secondary font-mono text-xs">${index + 1}</td>
+                <td class="px-6 py-4">
+                    <a href="https://${targetWikiSelect.value}/wiki/${encodeURIComponent(res.title)}" target="_blank" 
+                       class="text-wm-blue hover:underline font-bold transition-colors">
                         ${res.title}
                     </a>
                 </td>
-                <td class="px-6 py-5 text-gray-400 text-xs">${formatDate(res.last_edit_nl)}</td>
-                <td class="px-6 py-5 text-gray-500 text-xs hidden lg:table-cell">${res.days_since_edit}d</td>
-                <td class="px-6 py-5 text-center">
+                <td class="px-6 py-4 text-wm-gray-secondary text-xs">${formatDate(res.last_edit_nl)}</td>
+                <td class="px-6 py-4 text-center">
                     <div class="relative group/score inline-block">
-                        <span class="inline-block px-3 py-1 rounded-full text-xs font-black border cursor-help ${priorityClass}">
+                        <span class="inline-block px-3 py-1 rounded-sm text-xs font-black border cursor-help ${priorityColor}">
                             ${res.priority_score}
                         </span>
                         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/score:block z-50">
-                            <div class="bg-gray-950 border border-gray-800 rounded-lg p-3 shadow-2xl min-w-[140px]">
+                            <div class="bg-white border border-wm-gray-border rounded p-3 shadow-2xl min-w-[140px]">
                                 ${breakdownHtml}
                             </div>
-                            <div class="w-2 h-2 bg-gray-950 border-r border-b border-gray-800 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2"></div>
+                            <div class="w-2 h-2 bg-white border-r border-b border-wm-gray-border rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2"></div>
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-5">${reasonsHtml || '<span class="text-gray-600 italic text-xs">Stale content (tijd)</span>'}</td>
-                <td class="px-6 py-5 text-right">
-                    <button onclick="hideArticle('${res.title.replace(/'/g, "\\'")}')" class="p-1.5 text-gray-700 hover:text-red-400 transition-colors" title="Verberg dit artikel permanent">
+                <td class="px-6 py-4">${reasonsHtml || '<span class="text-wm-gray-secondary italic text-xs">Stale (time)</span>'}</td>
+                <td class="px-6 py-4 text-right">
+                    <button onclick="hideArticle('${res.title.replace(/'/g, "\\'")}')" class="p-1.5 text-wm-gray-secondary hover:text-wm-red transition-colors" title="Hide forever">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                     </button>
                 </td>
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Hide article function (global for onclick)
     window.hideArticle = async (title) => {
-        if (!confirm(`Weet je zeker dat je "${title}" permanent wilt verbergen voor toekomstige analyses?`)) return;
+        if (!confirm(`Hide "${title}" forever from future analyses?`)) return;
         
         try {
             const res = await fetch('/api/hide', {
@@ -216,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ article: title })
             });
             if (res.ok) {
-                // Remove from current view
                 currentResults = currentResults.filter(r => r.title !== title);
                 renderResults(currentResults);
             }
@@ -243,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchHiddenArticles() {
         showSection(hiddenArticlesSection);
-        hiddenArticlesBody.innerHTML = '<tr class="text-center"><td colspan="2" class="py-8 text-gray-500">Laden...</td></tr>';
+        hiddenArticlesBody.innerHTML = '<tr class="text-center"><td colspan="2" class="py-8 text-wm-gray-secondary">Loading...</td></tr>';
         
         try {
             const res = await fetch('/api/hidden');
@@ -252,11 +251,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.hidden && data.hidden.length > 0) {
                 hiddenEmptyState.classList.add('hidden');
                 hiddenArticlesBody.innerHTML = data.hidden.map(title => `
-                    <tr class="hover:bg-gray-800/40 transition-colors">
-                        <td class="px-6 py-4 font-medium text-gray-300">${title}</td>
+                    <tr class="hover:bg-wm-bg-base transition-colors">
+                        <td class="px-6 py-4 font-bold text-wm-gray-base">${title}</td>
                         <td class="px-6 py-4 text-right">
-                            <button onclick="unhideArticle('${title.replace(/'/g, "\\'")}')" class="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors">
-                                Herstellen
+                            <button onclick="unhideArticle('${title.replace(/'/g, "\\'")}')" class="text-xs font-bold text-wm-blue hover:underline">
+                                Restore
                             </button>
                         </td>
                     </tr>
@@ -266,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 hiddenEmptyState.classList.remove('hidden');
             }
         } catch (err) {
-            hiddenArticlesBody.innerHTML = '<tr class="text-center"><td colspan="2" class="py-8 text-red-400">Fout bij laden.</td></tr>';
+            hiddenArticlesBody.innerHTML = '<tr class="text-center"><td colspan="2" class="py-8 text-wm-red">Error loading.</td></tr>';
         }
     }
 
@@ -282,16 +281,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function sortResults(criteria) {
         if (criteria === 'priority') {
             currentResults.sort((a, b) => b.priority_score - a.priority_score);
-            sortPriorityBtn.classList.add('bg-blue-600', 'text-white');
-            sortPriorityBtn.classList.remove('text-gray-500');
-            sortDateBtn.classList.remove('bg-blue-600', 'text-white');
-            sortDateBtn.classList.add('text-gray-500');
+            sortPriorityBtn.classList.add('bg-wm-blue', 'text-white');
+            sortPriorityBtn.classList.remove('text-wm-gray-secondary');
+            sortDateBtn.classList.remove('bg-wm-blue', 'text-white');
+            sortDateBtn.classList.add('text-wm-gray-secondary');
         } else {
             currentResults.sort((a, b) => new Date(b.last_edit_nl) - new Date(a.last_edit_nl));
-            sortDateBtn.classList.add('bg-blue-600', 'text-white');
-            sortDateBtn.classList.remove('text-gray-500');
-            sortPriorityBtn.classList.remove('bg-blue-600', 'text-white');
-            sortPriorityBtn.classList.add('text-gray-500');
+            sortDateBtn.classList.add('bg-wm-blue', 'text-white');
+            sortDateBtn.classList.remove('text-wm-gray-secondary');
+            sortPriorityBtn.classList.remove('bg-wm-blue', 'text-white');
+            sortPriorityBtn.classList.add('text-wm-gray-secondary');
         }
         renderResults(currentResults);
     }

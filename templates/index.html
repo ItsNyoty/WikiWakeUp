@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WikiWakeUp — Wikimedia Codex Style</title>
-    <meta name="description" content="WikiWakeUp identificeert Wikipedia-artikelen die toe zijn aan een inhoudelijke update.">
+    <title>{{ _('title') }} — {{ _('subtitle') }}</title>
+    <meta name="description" content="{{ _('desc') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet">
     <script>
@@ -23,30 +23,32 @@
                         'wm-gray-secondary': '#72777d',
                         'wm-gray-border': '#a2a9b1',
                         'wm-bg-base': '#f8f9fa',
+                    },
+                    boxShadow: {
+                        'cdx': '0 1px 2px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05)',
                     }
                 } 
             }
         }
     </script>
     <style>
-        /* Codex-inspired overrides */
-        body { background-color: #f8f9fa; color: #202122; }
-        .cdx-card { background: white; border: 1px solid #a2a9b1; border-radius: 2px; }
-        .cdx-button--progressive { background-color: #36c; color: white; border-radius: 2px; font-weight: 700; transition: background-color 0.1s; }
-        .cdx-button--progressive:hover { background-color: #447ff5; }
-        .cdx-button--quiet { color: #36c; background: transparent; font-weight: 700; }
-        .cdx-button--quiet:hover { background: rgba(51, 102, 204, 0.1); }
-        .cdx-text-input { border: 1px solid #a2a9b1; border-radius: 2px; padding: 8px 12px; transition: border-color 0.2s, box-shadow 0.2s; }
-        .cdx-text-input:focus { border-color: #36c; box-shadow: inset 0 0 0 1px #36c; outline: none; }
-        .cdx-table th { background-color: #eaecf0; border-bottom: 1px solid #a2a9b1; color: #202122; font-weight: 700; }
-        .cdx-table td { border-bottom: 1px solid #eaecf0; }
-        .cdx-badge { border-radius: 2px; font-weight: 700; padding: 2px 6px; font-size: 0.75rem; }
+        body { background-color: #f8f9fa; color: #202122; letter-spacing: -0.01em; }
+        .cdx-card { background: white; border: 1px solid #a2a9b1; border-radius: 4px; }
+        .cdx-button--progressive { background-color: #36c; color: white; border-radius: 2px; font-weight: 700; transition: all 0.2s; }
+        .cdx-button--progressive:hover { background-color: #447ff5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(51,102,204,0.2); }
+        .cdx-button--quiet { color: #36c; background: transparent; font-weight: 700; border-radius: 2px; transition: background 0.2s; }
+        .cdx-button--quiet:hover { background: rgba(51, 102, 204, 0.05); }
+        .cdx-text-input { border: 1px solid #a2a9b1; border-radius: 2px; padding: 10px 14px; transition: all 0.2s; }
+        .cdx-text-input:focus { border-color: #36c; box-shadow: 0 0 0 2px rgba(51,102,204,0.1); outline: none; }
+        .cdx-table th { background-color: #f1f3f5; border-bottom: 2px solid #a2a9b1; color: #202122; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .cdx-table td { border-bottom: 1px solid #eaecf0; padding: 16px 24px; }
     </style>
     <script>
         window.WIKI_CONFIG = {
             oauthEnabled: {{ 'true' if oauth_enabled else 'false' }},
             loggedIn: {{ 'true' if logged_in else 'false' }},
-            username: {{ username|tojson if username else 'null' }}
+            username: {{ username|tojson if username else 'null' }},
+            lang: "{{ lang }}"
         };
     </script>
 </head>
@@ -55,35 +57,45 @@
     <!-- Header -->
     <nav class="border-b border-wm-gray-border bg-white sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-14">
+            <div class="flex items-center justify-between h-16">
                 <a href="/" class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-wm-blue rounded-sm flex items-center justify-center text-white font-black text-xl">W</div>
-                    <div>
-                        <h1 class="text-lg font-bold text-wm-gray-base leading-none">WikiWakeUp</h1>
-                    </div>
+                    <div class="w-9 h-9 bg-wm-blue rounded flex items-center justify-center text-white font-black text-xl shadow-sm">W</div>
+                    <h1 class="text-xl font-bold text-wm-gray-base">{{ _('title') }}</h1>
                 </a>
                 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <!-- Language Selector -->
+                    <div class="flex border border-wm-gray-border rounded overflow-hidden mr-4">
+                        {% for l in ['nl', 'en', 'fr', 'es'] %}
+                        <a href="/set_lang/{{ l }}" class="px-2 py-1 text-[10px] font-bold uppercase transition-colors {{ 'bg-wm-blue text-white' if lang == l else 'bg-white text-wm-gray-secondary hover:bg-wm-bg-base' }}">
+                            {{ l }}
+                        </a>
+                        {% endfor %}
+                    </div>
+
                     {% if logged_in %}
                     <button id="viewHiddenBtn" class="cdx-button--quiet px-3 py-2 text-xs">
-                        Verborgen artikelen
+                        {{ _('hidden') }}
                     </button>
                     {% endif %}
 
+                    <button data-modal-target="settingsModal" data-modal-toggle="settingsModal" class="cdx-button--quiet px-3 py-2 text-xs">
+                        {{ _('settings') }}
+                    </button>
+
                     {% if username == "ItsNyoty" %}
-                    <a href="/admin" class="text-xs font-bold text-wm-gray-secondary hover:text-wm-blue px-3 py-2 border border-wm-gray-border rounded-sm bg-wm-bg-base">
-                        Admin Dashboard
+                    <a href="/admin" class="text-xs font-bold text-wm-gray-secondary hover:text-wm-blue px-3 py-2 border border-wm-gray-border rounded bg-wm-bg-base">
+                        Admin
                     </a>
                     {% endif %}
 
                     {% if oauth_enabled %}
                         {% if logged_in %}
                             <div class="flex items-center gap-4 border-l border-wm-gray-border pl-4">
-                                <span class="text-xs text-wm-gray-secondary">Ingelogd als <strong>{{ username }}</strong></span>
-                                <a href="/logout" class="text-xs font-bold text-wm-red hover:underline">Uitloggen</a>
+                                <a href="/logout" class="text-xs font-bold text-wm-red hover:underline">{{ _('logout') }}</a>
                             </div>
                         {% else %}
-                            <a href="/login" class="cdx-button--progressive px-4 py-2 text-xs">Inloggen</a>
+                            <a href="/login" class="cdx-button--progressive px-4 py-2 text-xs">{{ _('login') }}</a>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -91,160 +103,221 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         <!-- Search Section -->
-        <section id="searchSection" class="max-w-3xl mx-auto">
-            <div class="cdx-card p-8 sm:p-12 shadow-sm">
-                <div class="mb-10">
-                    <h2 class="text-2xl font-serif font-bold text-wm-gray-base mb-4">Artikelen die een update nodig hebben</h2>
-                    <p class="text-wm-gray-secondary text-sm leading-relaxed">
-                        WikiWakeUp analyseert bijdragen van gebruikers en vergelijkt artikelen met Wikidata en andere taalversies om verouderde informatie op te sporen.
+        <section id="searchSection" class="max-w-4xl mx-auto">
+            <div class="cdx-card p-10 sm:p-14 shadow-cdx">
+                <div class="mb-12 text-center">
+                    <h2 class="text-3xl font-extrabold text-wm-gray-base mb-4 tracking-tight">{{ _('subtitle') }}</h2>
+                    <p class="text-wm-gray-secondary text-base leading-relaxed max-w-xl mx-auto">
+                        {{ _('desc') }}
                     </p>
                 </div>
 
-                <form id="analyzeForm" class="space-y-8">
-                    {% if not (oauth_enabled and logged_in) %}
-                    <div>
-                        <label for="usernameInput" class="block text-sm font-bold text-wm-gray-base mb-2">Wikipedia Gebruikersnaam</label>
-                        <input type="text" id="usernameInput" placeholder="Bijv. Ellywa"
-                            class="cdx-text-input w-full text-sm"
-                            {% if oauth_enabled and not logged_in %}{% else %}required{% endif %}>
-                    </div>
-                    {% endif %}
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form id="analyzeForm" class="space-y-10">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {% if not (oauth_enabled and logged_in) %}
                         <div>
-                            <label for="limitSelect" class="block text-sm font-bold text-wm-gray-base mb-2">Max. aantal bijdragen</label>
+                            <label for="usernameInput" class="block text-xs font-bold text-wm-gray-secondary uppercase tracking-wider mb-2 ml-1">{{ _('username_label') }}</label>
+                            <input type="text" id="usernameInput" placeholder="e.g. Ellywa"
+                                class="cdx-text-input w-full text-sm"
+                                {% if oauth_enabled and not logged_in %}{% else %}required{% endif %}>
+                        </div>
+                        {% else %}
+                        <div class="flex items-center gap-3 bg-wm-bg-base p-4 border border-wm-gray-border rounded">
+                            <div class="w-10 h-10 bg-wm-blue/10 rounded flex items-center justify-center text-wm-blue">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-wm-gray-secondary font-bold uppercase tracking-widest">{{ _('logged_in_as') }}</p>
+                                <p class="text-base font-bold text-wm-gray-base">{{ username }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div>
+                            <label for="targetWikiSelect" class="block text-xs font-bold text-wm-gray-secondary uppercase tracking-wider mb-2 ml-1">{{ _('target_wiki') }}</label>
+                            <select id="targetWikiSelect" class="cdx-text-input w-full text-sm bg-white cursor-pointer">
+                                <option value="nl.wikipedia.org" {{ 'selected' if lang == 'nl' }}>nl.wikipedia.org</option>
+                                <option value="en.wikipedia.org" {{ 'selected' if lang == 'en' }}>en.wikipedia.org</option>
+                                <option value="fr.wikipedia.org" {{ 'selected' if lang == 'fr' }}>fr.wikipedia.org</option>
+                                <option value="es.wikipedia.org" {{ 'selected' if lang == 'es' }}>es.wikipedia.org</option>
+                                <option value="de.wikipedia.org">de.wikipedia.org</option>
+                                <option value="it.wikipedia.org">it.wikipedia.org</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label for="limitSelect" class="block text-xs font-bold text-wm-gray-secondary uppercase tracking-wider mb-2 ml-1">{{ _('limit_label') }}</label>
                             <select id="limitSelect" class="cdx-text-input w-full text-sm bg-white cursor-pointer">
-                                <option value="1000">1.000 bijdragen</option>
-                                <option value="5000">5.000 bijdragen</option>
-                                <option value="10000" selected>10.000 bijdragen</option>
-                                <option value="50000">50.000 bijdragen</option>
-                                <option value="100000">100.000 bijdragen</option>
+                                <option value="1000">1.000</option>
+                                <option value="10000" selected>10.000</option>
+                                <option value="100000">100.000</option>
                             </select>
                         </div>
                         <div>
-                            <label for="topSelect" class="block text-sm font-bold text-wm-gray-base mb-2">Scan top artikelen</label>
+                            <label for="topSelect" class="block text-xs font-bold text-wm-gray-secondary uppercase tracking-wider mb-2 ml-1">{{ _('top_label') }}</label>
                             <select id="topSelect" class="cdx-text-input w-full text-sm bg-white cursor-pointer">
-                                <option value="50">50 artikelen</option>
-                                <option value="100" selected>100 artikelen</option>
-                                <option value="250">250 artikelen</option>
-                                <option value="500">500 artikelen</option>
-                                <option value="1000">1.000 artikelen</option>
+                                <option value="50">50</option>
+                                <option value="100" selected>100</option>
+                                <option value="500">500</option>
+                                <option value="1000">1.000</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="pt-4">
-                        <button type="submit" id="submitBtn" class="cdx-button--progressive w-full py-3 text-sm">
-                            Analyse starten
+                    <div class="pt-6">
+                        <button type="submit" id="submitBtn" class="cdx-button--progressive w-full py-4 text-sm uppercase tracking-widest shadow-lg">
+                            {{ _('start_analysis') }}
                         </button>
                     </div>
                 </form>
+                
+                <div class="mt-8 text-center">
+                    <button data-modal-target="privacyModal" data-modal-toggle="privacyModal" class="text-[10px] font-bold text-wm-gray-secondary uppercase tracking-widest hover:text-wm-blue transition-colors">
+                        {{ _('privacy') }} & Policy
+                    </button>
+                </div>
             </div>
         </section>
 
         <!-- Loading Section -->
         <section class="hidden max-w-2xl mx-auto" id="loadingSection">
-            <div class="cdx-card p-12 text-center shadow-sm">
-                <div class="flex justify-center mb-8">
-                    <div class="w-12 h-12 border-4 border-wm-gray-border border-t-wm-blue rounded-full animate-spin"></div>
+            <div class="cdx-card p-14 text-center shadow-cdx">
+                <div class="flex justify-center mb-10">
+                    <div class="w-14 h-14 border-4 border-wm-bg-base border-t-wm-blue rounded-full animate-spin"></div>
                 </div>
-                <h3 class="text-xl font-bold text-wm-gray-base mb-2" id="loadingTitle">Analyse bezig...</h3>
-                <p class="text-sm text-wm-gray-secondary mb-10" id="loadingMessage">Even geduld a.u.b.</p>
+                <h3 class="text-2xl font-bold text-wm-gray-base mb-2" id="loadingTitle">{{ _('loading') }}</h3>
+                <p class="text-sm text-wm-gray-secondary mb-12" id="loadingMessage">{{ _('wait_msg') }}</p>
                 
                 <div class="max-w-md mx-auto">
-                    <div class="flex justify-between text-xs font-bold text-wm-gray-secondary mb-2 uppercase tracking-wide">
-                        <span id="progressStep">STAP 0/4</span>
+                    <div class="flex justify-between text-xs font-bold text-wm-gray-secondary mb-3 uppercase tracking-widest">
+                        <span>{{ _('step') }} <span id="progressStep">0/4</span></span>
                         <span id="progressPercent">0%</span>
                     </div>
-                    <div class="w-full bg-wm-bg-base border border-wm-gray-border h-3 p-0.5">
+                    <div class="w-full bg-wm-bg-base rounded-full h-2 overflow-hidden border border-wm-gray-border">
                         <div id="loadingBarFill" class="bg-wm-blue h-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Error Section -->
-        <section class="hidden max-w-2xl mx-auto" id="errorSection">
-            <div class="cdx-card p-12 text-center border-wm-red shadow-sm">
-                <h3 class="text-xl font-bold text-wm-red mb-4">Er is een fout opgetreden</h3>
-                <p class="text-sm text-wm-gray-secondary mb-8" id="errorMessage"></p>
-                <button id="retryBtn" class="cdx-button--progressive px-8 py-3 text-sm">
-                    Opnieuw proberen
-                </button>
-            </div>
-        </section>
-
-        <!-- Hidden Articles Section -->
-        <section class="hidden space-y-6" id="hiddenArticlesSection">
-            <div class="flex items-center justify-between border-b border-wm-gray-border pb-4">
-                <h2 class="text-xl font-bold text-wm-gray-base tracking-tight">Verborgen artikelen</h2>
-                <button id="backToSearchFromHidden" class="cdx-button--quiet text-sm">Terug naar Home</button>
-            </div>
-            <div class="cdx-card shadow-sm overflow-hidden">
-                <table class="w-full text-sm text-left cdx-table">
-                    <thead>
-                        <tr>
-                            <th class="px-6 py-4">Artikelnaam</th>
-                            <th class="px-6 py-4 text-right">Actie</th>
-                        </tr>
-                    </thead>
-                    <tbody id="hiddenArticlesBody"></tbody>
-                </table>
-                <div id="hiddenEmptyState" class="hidden py-12 text-center text-wm-gray-secondary italic text-sm">
-                    Geen verborgen artikelen gevonden.
-                </div>
-            </div>
-        </section>
-
         <!-- Results Section -->
-        <section class="hidden space-y-8" id="resultsSection">
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-wm-gray-border">
+        <section class="hidden space-y-8 animate-fade-in" id="resultsSection">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-wm-gray-border">
                 <div>
-                    <h2 class="text-2xl font-serif font-bold text-wm-gray-base" id="resultsTitle">Resultaten</h2>
+                    <h2 class="text-3xl font-extrabold text-wm-gray-base tracking-tight">{{ _('results') }}</h2>
                     <p class="text-sm text-wm-gray-secondary mt-1" id="resultsSubtitle"></p>
                 </div>
-                <div class="flex items-center gap-3">
-                    <div class="flex bg-wm-bg-base border border-wm-gray-border p-1 rounded-sm">
-                        <button id="sortPriority" class="sort-btn px-4 py-1.5 text-xs font-bold rounded-sm transition-all bg-wm-blue text-white">Prioriteit</button>
-                        <button id="sortDate" class="sort-btn px-4 py-1.5 text-xs font-bold rounded-sm transition-all text-wm-gray-secondary hover:bg-white">Datum</button>
+                <div class="flex items-center gap-4">
+                    <div class="flex bg-white border border-wm-gray-border p-1 rounded">
+                        <button id="sortPriority" class="sort-btn px-5 py-2 text-[10px] font-bold uppercase rounded transition-all bg-wm-blue text-white">{{ _('priority') }}</button>
+                        <button id="sortDate" class="sort-btn px-5 py-2 text-[10px] font-bold uppercase rounded transition-all text-wm-gray-secondary hover:bg-wm-bg-base">{{ _('date') }}</button>
                     </div>
-                    <button id="newSearchBtn" class="cdx-button--quiet p-2 border border-wm-gray-border rounded-sm bg-white" title="Nieuwe zoekopdracht">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <button id="newSearchBtn" class="cdx-button--quiet p-3 border border-wm-gray-border bg-white hover:shadow-sm" title="{{ _('back_to_home') }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </button>
                 </div>
             </div>
 
-            <div class="cdx-card shadow-sm overflow-x-auto">
+            <div class="cdx-card shadow-cdx overflow-x-auto">
                 <table class="w-full text-sm text-left cdx-table" id="resultsTable">
                     <thead>
                         <tr>
-                            <th class="px-6 py-4 text-center w-12">#</th>
-                            <th class="px-6 py-4">Artikel</th>
-                            <th class="px-6 py-4">Laatste NL update</th>
-                            <th class="px-6 py-4 hidden lg:table-cell">Dagen</th>
-                            <th class="px-6 py-4 text-center">Score</th>
-                            <th class="px-6 py-4">Analyse-redenen</th>
-                            <th class="px-6 py-4 text-right w-12"></th>
+                            <th class="px-6 py-4 text-center w-16">#</th>
+                            <th class="px-6 py-4">{{ _('article') }}</th>
+                            <th class="px-6 py-4">{{ _('last_update') }}</th>
+                            <th class="px-6 py-4 text-center">{{ _('score') }}</th>
+                            <th class="px-6 py-4">{{ _('reasons') }}</th>
+                            <th class="px-6 py-4 text-right"></th>
                         </tr>
                     </thead>
                     <tbody id="resultsBody" class="bg-white"></tbody>
                 </table>
             </div>
+        </section>
 
-            <div class="hidden py-24 text-center" id="emptyState">
-                <p class="text-lg font-bold text-wm-gray-secondary">Geen artikelen gevonden die een update nodig hebben.</p>
+        <!-- Hidden Articles -->
+        <section class="hidden space-y-8" id="hiddenArticlesSection">
+            <div class="flex items-center justify-between border-b border-wm-gray-border pb-6">
+                <h2 class="text-3xl font-extrabold text-wm-gray-base tracking-tight">{{ _('hidden') }}</h2>
+                <button id="backToSearchFromHidden" class="cdx-button--progressive px-6 py-2 text-xs uppercase tracking-widest">{{ _('back_to_home') }}</button>
+            </div>
+            <div class="cdx-card shadow-cdx overflow-hidden">
+                <table class="w-full text-sm text-left cdx-table">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-4">{{ _('article') }}</th>
+                            <th class="px-6 py-4 text-right">Actie</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hiddenArticlesBody"></tbody>
+                </table>
+                <div id="hiddenEmptyState" class="hidden py-16 text-center text-wm-gray-secondary italic">
+                    Geen verborgen artikelen.
+                </div>
             </div>
         </section>
     </main>
 
-    <footer class="border-t border-wm-gray-border bg-wm-bg-base py-10 mt-10">
+    <!-- Settings Modal -->
+    <div id="settingsModal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-[100] justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+        <div class="relative p-6 w-full max-w-md max-h-full">
+            <div class="relative bg-white rounded shadow-2xl border border-wm-gray-border">
+                <div class="flex items-center justify-between p-5 border-b border-wm-gray-border bg-wm-bg-base">
+                    <h3 class="text-sm font-bold text-wm-gray-base uppercase tracking-widest">{{ _('settings') }}</h3>
+                    <button type="button" class="text-wm-gray-secondary hover:text-wm-gray-base" data-modal-hide="settingsModal">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="p-8 space-y-6">
+                    <div>
+                        <p class="text-xs font-bold text-wm-gray-secondary uppercase tracking-widest mb-4">Vergelijken met:</p>
+                        <div class="grid grid-cols-2 gap-4" id="compareLangsGrid">
+                            {% for code, name in [('en', 'English'), ('de', 'German'), ('fr', 'French'), ('es', 'Spanish'), ('nl', 'Dutch'), ('it', 'Italian'), ('pl', 'Polish'), ('pt', 'Portuguese')] %}
+                            <label class="flex items-center gap-3 p-3 border border-wm-gray-border rounded cursor-pointer hover:bg-wm-bg-base transition-colors">
+                                <input type="checkbox" name="compare_lang" value="{{ code }}" class="w-4 h-4 text-wm-blue border-wm-gray-border rounded focus:ring-wm-blue" {{ 'checked' if code in ['en', 'de', 'fr', 'es'] }}>
+                                <span class="text-xs font-medium text-wm-gray-base">{{ name }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Modal -->
+    <div id="privacyModal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-[100] justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+        <div class="relative p-6 w-full max-w-lg max-h-full">
+            <div class="relative bg-white rounded shadow-2xl border border-wm-gray-border">
+                <div class="p-10">
+                    <h3 class="text-xl font-bold text-wm-gray-base mb-6">{{ _('privacy') }} Policy</h3>
+                    <div class="text-sm text-wm-gray-secondary space-y-4 leading-relaxed">
+                        <p>{{ _('privacy_desc') }}</p>
+                        <p>We verzamelen gegevens zoals:</p>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Je publieke Wikipedia-gebruikersnaam.</li>
+                            <li>Tijdstippen waarop je de tool gebruikt.</li>
+                            <li>Artikelen die je specifiek hebt verborgen voor jezelf.</li>
+                        </ul>
+                        <p>Deze gegevens worden veilig opgeslagen op de infrastructuur van Wikimedia Toolforge en worden nooit gedeeld met derden.</p>
+                    </div>
+                    <div class="mt-10">
+                        <button data-modal-hide="privacyModal" class="cdx-button--progressive w-full py-3 text-xs uppercase tracking-widest">Begrepen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-t border-wm-gray-border bg-white py-14 mt-12">
         <div class="max-w-7xl mx-auto px-4 text-center">
-            <p class="text-xs text-wm-gray-secondary leading-loose">
-                WikiWakeUp &middot; Gebouwd voor Wikimedia Toolforge &middot; <a href="https://www.mediawiki.org/wiki/Codex" target="_blank" class="text-wm-blue hover:underline">Codex Design System</a>
-            </p>
+            <p class="text-[10px] font-bold text-wm-gray-secondary uppercase tracking-[0.2em] mb-2">WikiWakeUp Tool &middot; Toolforge</p>
+            <p class="text-[9px] text-wm-gray-secondary opacity-60">Handcrafted for the Wikimedia Community</p>
         </div>
     </footer>
 
