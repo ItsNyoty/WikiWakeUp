@@ -133,15 +133,15 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsBody.innerHTML = '';
         
         if (results.length === 0) {
-            resultsTable.classList.add('hidden');
+            resultsTable.parentElement.classList.add('hidden');
             emptyState.classList.remove('hidden');
-            resultsSubtitle.textContent = 'No stale articles found.';
+            resultsSubtitle.textContent = window.WIKI_CONFIG.lang === 'nl' ? 'Geen verouderde artikelen gevonden.' : 'No stale articles found.';
             return;
         }
 
-        resultsTable.classList.remove('hidden');
+        resultsTable.parentElement.classList.remove('hidden');
         emptyState.classList.add('hidden');
-        resultsSubtitle.textContent = `${results.length} articles found.`;
+        resultsSubtitle.textContent = `${results.length} ${window.WIKI_CONFIG.lang === 'nl' ? 'artikelen gevonden.' : 'articles found.'}`;
 
         results.forEach((res, index) => {
             const tr = document.createElement('tr');

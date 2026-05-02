@@ -205,6 +205,20 @@
             </div>
         </section>
 
+        <!-- Error Section -->
+        <section class="hidden max-w-2xl mx-auto" id="errorSection">
+            <div class="cdx-card p-12 text-center border-wm-red shadow-cdx">
+                <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-wm-red">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <h3 class="text-xl font-bold text-wm-red mb-4">Error</h3>
+                <p class="text-sm text-wm-gray-secondary mb-8" id="errorMessage"></p>
+                <button id="retryBtn" class="cdx-button--progressive px-8 py-3 text-sm">
+                    {{ _('back_to_home') }}
+                </button>
+            </div>
+        </section>
+
         <!-- Results Section -->
         <section class="hidden space-y-8 animate-fade-in" id="resultsSection">
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-wm-gray-border">
@@ -237,6 +251,13 @@
                     </thead>
                     <tbody id="resultsBody" class="bg-white"></tbody>
                 </table>
+            </div>
+            
+            <div class="hidden py-24 text-center" id="emptyState">
+                <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <p class="text-lg font-bold text-wm-gray-secondary">No articles need an update right now.</p>
             </div>
         </section>
 
