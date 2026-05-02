@@ -1,2 +1,7 @@
 flask
 gunicorn
+requests
+requests-oauthlib
+python-dateutil
+pyyaml
+pymysql

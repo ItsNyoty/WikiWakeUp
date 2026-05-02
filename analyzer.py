@@ -1,0 +1,147 @@
+# -*- coding: utf-8 -*-
+"""
+WikiWakeUp - Analyzer module.
+
+Orchestrates the analysis of a Wikipedia user's contributions,
+cross-wiki checks, and Wikidata synchronization to produce
+a prioritized list of articles that may need updating.
+"""
+
+import logging
+from datetime import datetime, timezone
+from dateutil import parser as dateparser
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from wiki_api import (
+    get_user_contributions,
+    aggregate_contributions,
+    get_article_last_revision,
+    check_crosswiki_growth,
+    check_wikidata_updates,
+)
+
+logger = logging.getLogger(__name__)
+
+
+def analyze_article(article, report_func=None):
+    """Deep analysis for a single article."""
+    title = article["title"]
+    try:
+        # Get NL article's last revision info
+        nl_rev = get_article_last_revision(title)
+        if not nl_rev:
+            return None
+
+        nl_last_edit = nl_rev["timestamp"]
+        nl_edit_dt = dateparser.parse(nl_last_edit)
+        if nl_edit_dt.tzinfo is None:
+            nl_edit_dt = nl_edit_dt.replace(tzinfo=timezone.utc)
+
+        now = datetime.now(timezone.utc)
+        days_since = (now - nl_edit_dt).days
+
+        reasons = []
+
+        # Cross-wiki growth check
+        try:
+            crosswiki_reasons = check_crosswiki_growth(title, nl_last_edit)
+            reasons.extend(crosswiki_reasons)
+        except Exception as e:
+            logger.warning(f"Cross-wiki check failed for {title}: {e}")
+
+        # Wikidata sync check
+        try:
+            wikidata_reasons = check_wikidata_updates(title, nl_last_edit)
+            reasons.extend(wikidata_reasons)
+        except Exception as e:
+            logger.warning(f"Wikidata check failed for {title}: {e}")
+
+        # Calculate priority score
+        priority_score = calculate_priority(days_since, reasons)
+
+        return {
+            "title": title,
+            "last_edit_nl": nl_last_edit,
+            "days_since_edit": days_since,
+            "total_added_by_user": article["total_added"],
+            "user_edit_count": article["edit_count"],
+            "current_size": nl_rev["size"],
+            "reasons": reasons,
+            "priority_score": priority_score,
+        }
+    except Exception as e:
+        logger.error(f"Error analyzing {title}: {e}")
+        return None
+
+
+def analyze_user(username, max_contribs=2500, top_n=100, progress_callback=None):
+    """
+    Full analysis pipeline for a Wikipedia user.
+    """
+    def report(step, total, msg):
+        if progress_callback:
+            progress_callback(step, total, msg)
+        logger.info(f"[{step}/{total}] {msg}")
+
+    # Step 1: Fetch user contributions
+    report(1, 4, f"Bijdragen ophalen van {username}...")
+    contributions = get_user_contributions(username, limit=max_contribs)
+    if not contributions:
+        return []
+
+    # Step 2: Aggregate and pick top articles
+    report(2, 4, "Artikelen analyseren...")
+    aggregated = aggregate_contributions(contributions)
+    top_articles = aggregated[:top_n]
+
+    # Step 3: Deep analysis for each article (Parallelized)
+    results = []
+    total_articles = len(top_articles)
+    
+    report(3, 4, f"Deep analysis van {total_articles} artikelen...")
+
+    # Use ThreadPoolExecutor to speed up API-bound tasks
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_article = {executor.submit(analyze_article, article): article for article in top_articles}
+        
+        completed = 0
+        for future in as_completed(future_to_article):
+            completed += 1
+            res = future.result()
+            if res:
+                results.append(res)
+            
+            if completed % 5 == 0 or completed == total_articles:
+                report(3, 4, f"Voortgang: {completed}/{total_articles} artikelen gecontroleerd")
+
+    # Step 4: Sort by priority score
+    report(4, 4, "Resultaten sorteren...")
+    results.sort(key=lambda x: x["priority_score"], reverse=True)
+
+    # Only return articles that have at least one reason or are stale (6+ months)
+    flagged = [r for r in results if r["reasons"] or r["days_since_edit"] > 180]
+
+    return flagged
+
+
+def calculate_priority(days_since_edit, reasons):
+    """
+    Calculate a priority score.
+    """
+    score = 0.0
+
+    # Time factor: logarithmic scaling, max ~40 points
+    if days_since_edit > 0:
+        import math
+        score += min(40, math.log2(days_since_edit + 1) * 4)
+
+    # Reason factors
+    for reason in reasons:
+        if reason["type"] == "wikidata":
+            score += 30
+        elif reason["type"] == "crosswiki":
+            growth = reason.get("growth_pct", 20)
+            score += min(30, 15 + growth * 0.15)
+        elif reason["type"] == "nowikidata":
+            score += 15
+
+    return round(score, 1)

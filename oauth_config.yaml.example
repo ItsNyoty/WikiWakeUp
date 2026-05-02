@@ -1,0 +1,16 @@
+# OAuth 2.0 Configuration for WikiWakeUp
+# Place this file at ~/oauth_config.yaml on Toolforge
+# or in the project directory for local development.
+#
+# Register at: https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration
+# Choose "Propose new OAuth 2.0 client" and fill in:
+#   - Application name: WikiWakeUp
+#   - Consumer version: 1.0
+#   - Callback URL: https://wikiwakeup.toolforge.org/oauth-callback
+#   - Grant type: User identity verification only
+#
+# After registration you receive a client_id and client_secret:
+
+client_id: "YOUR_CLIENT_ID_HERE"
+client_secret: "YOUR_CLIENT_SECRET_HERE"
+callback_url: "https://wikiwakeup.toolforge.org/oauth-callback"

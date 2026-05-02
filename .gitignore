@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Toolforge/OAuth Secrets
+oauth_config.yaml
+oauth_config.yaml.toolforge
+oauth_config.yaml.example
+!oauth_config.yaml.example
+
+# SSH Keys
+toolforge
+toolforge.pub
+
+# Databases
+*.db
+
+# Temporary/Test scripts
+test_ssh.py
+test_write.txt
+
+# VS Code
+.vscode/

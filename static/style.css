@@ -1,0 +1,152 @@
+/* ============================================
+   WikiWakeUp — Custom animations & utilities
+   (Tailwind CSS handles all base styling)
+   ============================================ */
+
+/* --- Custom Animations --- */
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -40px) scale(1.05); }
+    66% { transform: translate(-20px, 30px) scale(0.97); }
+}
+
+@keyframes float-delayed {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(-25px, 35px) scale(1.08); }
+    66% { transform: translate(35px, -25px) scale(0.95); }
+}
+
+@keyframes spin-reverse {
+    to { transform: rotate(-360deg); }
+}
+
+@keyframes spin-slow {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes load-pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+@keyframes fadeInRow {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float { animation: float 20s infinite ease-in-out; }
+.animate-float-delayed { animation: float-delayed 20s infinite ease-in-out; animation-delay: -10s; }
+.animate-spin-reverse { animation: spin-reverse 1.8s linear infinite; }
+.animate-spin-slow { animation: spin-slow 2.4s linear infinite; }
+.animate-load-pulse { animation: load-pulse 2s infinite ease-in-out; }
+.animate-fadeInRow { animation: fadeInRow 0.4s ease backwards; }
+
+/* --- Table row hover --- */
+#resultsBody tr {
+    transition: background-color 0.15s ease;
+}
+
+#resultsBody tr:hover {
+    background-color: rgba(59, 130, 246, 0.04);
+}
+
+/* --- Score bar --- */
+.score-bar-bg {
+    height: 6px;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.score-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.5s ease;
+}
+
+/* --- Reason tags --- */
+.reason-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    margin: 0.1rem 0.2rem 0.1rem 0;
+    white-space: nowrap;
+    border: 1px solid;
+}
+
+.reason-tag.wikidata {
+    background: rgba(139, 92, 246, 0.12);
+    color: #a78bfa;
+    border-color: rgba(139, 92, 246, 0.25);
+}
+
+.reason-tag.crosswiki {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.25);
+}
+
+.reason-tag.stale {
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.25);
+}
+
+.reason-tag.nowikidata {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* --- Days badge --- */
+.days-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.days-badge.green {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+}
+
+.days-badge.amber {
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+}
+
+.days-badge.red {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+}
+
+/* --- Sort button active state --- */
+.sort-btn.active {
+    background: rgba(59, 130, 246, 0.12) !important;
+    color: #60a5fa !important;
+    border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.5);
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 85, 99, 0.8);
+}
