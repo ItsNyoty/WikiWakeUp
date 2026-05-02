@@ -174,14 +174,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tr.innerHTML = `
                 <td class="px-6 py-4 text-center text-wm-gray-secondary font-mono text-xs">${index + 1}</td>
-                <td class="px-6 py-4">
+                <td class="px-6 py-4" data-label="${window.WIKI_CONFIG.lang === 'nl' ? 'Artikel' : 'Article'}">
                     <a href="https://${targetWikiSelect.value}/wiki/${encodeURIComponent(res.title)}" target="_blank" 
                        class="text-wm-blue hover:underline font-bold transition-colors">
                         ${res.title}
                     </a>
                 </td>
-                <td class="px-6 py-4 text-wm-gray-secondary text-xs">${formatDate(res.last_edit_nl)}</td>
-                <td class="px-6 py-4 text-center">
+                <td class="px-6 py-4 text-wm-gray-secondary text-xs" data-label="${window.WIKI_CONFIG.lang === 'nl' ? 'Update' : 'Last update'}">${formatDate(res.last_edit_nl)}</td>
+                <td class="px-6 py-4 text-center" data-label="Score">
                     <div class="relative group/score inline-block">
                         <span class="inline-block px-3 py-1 rounded-sm text-xs font-black border cursor-help ${priorityColor}">
                             ${res.priority_score}
@@ -194,10 +194,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-4">${reasonsHtml || '<span class="text-wm-gray-secondary italic text-xs">Stale (time)</span>'}</td>
-                <td class="px-6 py-4 text-right">
+                <td class="px-6 py-4" data-label="${window.WIKI_CONFIG.lang === 'nl' ? 'Redenen' : 'Reasons'}">${reasonsHtml || '<span class="text-wm-gray-secondary italic text-xs">Stale (time)</span>'}</td>
+                <td class="px-6 py-4 text-right actions-cell">
                     <button onclick="hideArticle('${res.title.replace(/'/g, "\\'")}')" class="p-1.5 text-wm-gray-secondary hover:text-wm-red transition-colors" title="Hide forever">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                     </button>
                 </td>
             `;
