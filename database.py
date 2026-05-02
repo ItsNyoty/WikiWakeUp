@@ -60,6 +60,14 @@ def init_db():
                     top_count INTEGER
                 )
             ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS hidden_articles (
+                    username TEXT NOT NULL,
+                    article_title TEXT NOT NULL,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (username, article_title)
+                )
+            ''')
         else:
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS analysis_logs (
@@ -69,6 +77,14 @@ def init_db():
                     total_flagged INT,
                     limit_count INT,
                     top_count INT
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS hidden_articles (
+                    username VARCHAR(255) NOT NULL,
+                    article_title VARCHAR(255) NOT NULL,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (username, article_title)
                 )
             ''')
         conn.commit()
@@ -120,5 +136,51 @@ def get_admin_stats():
     except Exception as e:
         logger.error(f"Failed to get admin stats: {e}")
         return None
+    finally:
+        conn.close()
+
+
+def hide_article(username, article_title):
+    """Mark an article as hidden for a specific user."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT IGNORE INTO hidden_articles (username, article_title) VALUES (%s, %s)" if not isinstance(conn, sqlite3.Connection) else
+            "INSERT OR IGNORE INTO hidden_articles (username, article_title) VALUES (?, ?)",
+            (username, article_title)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def unhide_article(username, article_title):
+    """Remove an article from a user's hidden list."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM hidden_articles WHERE username = %s AND article_title = %s" if not isinstance(conn, sqlite3.Connection) else
+            "DELETE FROM hidden_articles WHERE username = ? AND article_title = ?",
+            (username, article_title)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_hidden_articles(username):
+    """Get all hidden articles for a user."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT article_title FROM hidden_articles WHERE username = %s" if not isinstance(conn, sqlite3.Connection) else
+            "SELECT article_title FROM hidden_articles WHERE username = ?",
+            (username,)
+        )
+        rows = cursor.fetchall()
+        return [row['article_title'] if isinstance(row, dict) else row[0] for row in rows]
     finally:
         conn.close()

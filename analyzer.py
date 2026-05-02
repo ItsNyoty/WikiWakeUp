@@ -18,6 +18,7 @@ from wiki_api import (
     check_crosswiki_growth,
     check_wikidata_updates,
 )
+from database import get_hidden_articles
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +56,8 @@ def analyze_article(article, report_func=None):
         except Exception as e:
             logger.warning(f"Wikidata check failed for {title}: {e}")
 
-        # Calculate priority score
-        priority_score = calculate_priority(days_since, reasons)
+        # Calculate priority score with breakdown
+        score_data = calculate_priority(days_since, reasons)
 
         return {
             "title": title,
@@ -66,7 +67,8 @@ def analyze_article(article, report_func=None):
             "user_edit_count": article["edit_count"],
             "current_size": nl_rev["size"],
             "reasons": reasons,
-            "priority_score": priority_score,
+            "priority_score": score_data["total"],
+            "score_breakdown": score_data["breakdown"]
         }
     except Exception as e:
         logger.error(f"Error analyzing {title}: {e}")
@@ -91,6 +93,13 @@ def analyze_user(username, max_contribs=2500, top_n=100, progress_callback=None)
     # Step 2: Aggregate and pick top articles
     report(2, 4, "Artikelen analyseren...")
     aggregated = aggregate_contributions(contributions)
+    
+    # Filter out hidden articles
+    hidden = get_hidden_articles(username)
+    if hidden:
+        report(2, 4, f"Filteren: {len(hidden)} verborgen artikelen overslaan...")
+        aggregated = [a for a in aggregated if a["title"] not in hidden]
+
     top_articles = aggregated[:top_n]
 
     # Step 3: Deep analysis for each article (Parallelized)
@@ -125,23 +134,44 @@ def analyze_user(username, max_contribs=2500, top_n=100, progress_callback=None)
 
 def calculate_priority(days_since_edit, reasons):
     """
-    Calculate a priority score.
+    Calculate a priority score with breakdown.
     """
-    score = 0.0
+    import math
+    
+    breakdown = {
+        "staleness": 0.0,
+        "wikidata": 0.0,
+        "crosswiki": 0.0,
+        "nowikidata": 0.0
+    }
 
     # Time factor: logarithmic scaling, max ~40 points
     if days_since_edit > 0:
-        import math
-        score += min(40, math.log2(days_since_edit + 1) * 4)
+        time_score = min(40, math.log2(days_since_edit + 1) * 4)
+        breakdown["staleness"] = round(time_score, 1)
 
     # Reason factors
     for reason in reasons:
+        # Ensure msg is never undefined/missing
+        if "msg" not in reason:
+            reason["msg"] = f"Update gedetecteerd ({reason.get('type', 'onbekend')})"
+
         if reason["type"] == "wikidata":
-            score += 30
+            points = 30
+            breakdown["wikidata"] += points
+            reason["points"] = points
         elif reason["type"] == "crosswiki":
             growth = reason.get("growth_pct", 20)
-            score += min(30, 15 + growth * 0.15)
+            points = min(30, 15 + growth * 0.15)
+            breakdown["crosswiki"] += points
+            reason["points"] = round(points, 1)
         elif reason["type"] == "nowikidata":
-            score += 15
+            points = 15
+            breakdown["nowikidata"] += points
+            reason["points"] = points
 
-    return round(score, 1)
+    total = sum(breakdown.values())
+    return {
+        "total": round(total, 1),
+        "breakdown": breakdown
+    }

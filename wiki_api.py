@@ -210,11 +210,11 @@ def aggregate_contributions(contributions):
 
 
 def get_article_last_revision(title, api_url=NL_API):
-    """Get the last revision timestamp and size for an article."""
+    """Get the last revision timestamp and size for an article. Returns None if it's a redirect."""
     params = {
         "action": "query",
         "titles": title,
-        "prop": "revisions",
+        "prop": "revisions|info",
         "rvprop": "timestamp|size|ids",
         "rvlimit": "1",
     }
@@ -223,6 +223,12 @@ def get_article_last_revision(title, api_url=NL_API):
     for page_id, page_data in pages.items():
         if page_id == "-1":
             return None
+        
+        # Skip redirects
+        if "redirect" in page_data:
+            logger.info(f"Skipping redirect: {title}")
+            return None
+
         revs = page_data.get("revisions", [])
         if revs:
             return {

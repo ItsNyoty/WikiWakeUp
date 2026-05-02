@@ -25,7 +25,7 @@ import yaml
 from werkzeug.middleware.proxy_fix import ProxyFix
 from requests_oauthlib import OAuth2Session
 from analyzer import analyze_user
-from database import init_db, log_analysis, get_admin_stats
+from database import init_db, log_analysis, get_admin_stats, hide_article, unhide_article, get_hidden_articles
 import threading
 import uuid
 
@@ -311,6 +311,45 @@ def api_status(job_id):
         return flask.jsonify({"error": "Taak niet gevonden"}), 404
     
     return flask.jsonify(job)
+
+
+@app.route("/api/hide", methods=["POST"])
+def api_hide():
+    """Hide an article for the current user."""
+    data = flask.request.json
+    article = data.get("article")
+    username = get_current_user() or data.get("user")
+    
+    if not article or not username:
+        return flask.jsonify({"error": "Missende parameters"}), 400
+    
+    hide_article(username, article)
+    return flask.jsonify({"success": True})
+
+
+@app.route("/api/unhide", methods=["POST"])
+def api_unhide():
+    """Unhide an article for the current user."""
+    data = flask.request.json
+    article = data.get("article")
+    username = get_current_user() or data.get("user")
+    
+    if not article or not username:
+        return flask.jsonify({"error": "Missende parameters"}), 400
+    
+    unhide_article(username, article)
+    return flask.jsonify({"success": True})
+
+
+@app.route("/api/hidden")
+def api_get_hidden():
+    """Get all hidden articles for the current user."""
+    username = get_current_user() or flask.request.args.get("user")
+    if not username:
+        return flask.jsonify({"error": "Niet ingelogd"}), 401
+    
+    hidden = get_hidden_articles(username)
+    return flask.jsonify({"hidden": hidden})
 
 
 if __name__ == "__main__":

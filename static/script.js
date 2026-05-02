@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingSection = document.getElementById('loadingSection');
     const errorSection = document.getElementById('errorSection');
     const resultsSection = document.getElementById('resultsSection');
+    const hiddenArticlesSection = document.getElementById('hiddenArticlesSection');
     
     const loadingMessage = document.getElementById('loadingMessage');
     const loadingBarFill = document.getElementById('loadingBarFill');
@@ -24,17 +25,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsSubtitle = document.getElementById('resultsSubtitle');
     const emptyState = document.getElementById('emptyState');
     
+    const hiddenArticlesBody = document.getElementById('hiddenArticlesBody');
+    const hiddenEmptyState = document.getElementById('hiddenEmptyState');
+    
     const retryBtn = document.getElementById('retryBtn');
     const newSearchBtn = document.getElementById('newSearchBtn');
     const sortPriorityBtn = document.getElementById('sortPriority');
     const sortDateBtn = document.getElementById('sortDate');
+    const viewHiddenBtn = document.getElementById('viewHiddenBtn');
+    const backToSearchFromHidden = document.getElementById('backToSearchFromHidden');
 
     let currentResults = [];
     let pollingInterval = null;
 
     // Helper: Show specific section
     function showSection(section) {
-        [searchSection, loadingSection, errorSection, resultsSection].forEach(s => s.classList.add('hidden'));
+        [searchSection, loadingSection, errorSection, resultsSection, hiddenArticlesSection].forEach(s => s.classList.add('hidden'));
         section.classList.remove('hidden');
     }
 
@@ -151,8 +157,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (r.type === 'crosswiki') badgeClass = 'bg-purple-500/10 text-purple-400 border border-purple-500/20';
                 if (r.type === 'nowikidata') badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
                 
-                return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold mr-1.5 mb-1 ${badgeClass}">${r.msg}</span>`;
+                const pointsText = r.points ? ` (+${r.points})` : '';
+                return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold mr-1.5 mb-1 ${badgeClass}">${r.msg}${pointsText}</span>`;
             }).join('');
+
+            // Score breakdown tooltip content
+            const b = res.score_breakdown || {};
+            const breakdownHtml = `
+                <div class="text-[10px] space-y-1 p-1">
+                    <div class="flex justify-between gap-4"><span>Staleness:</span><span class="font-bold text-white">${b.staleness || 0}</span></div>
+                    <div class="flex justify-between gap-4"><span>Wikidata:</span><span class="font-bold text-emerald-400">+${b.wikidata || 0}</span></div>
+                    <div class="flex justify-between gap-4"><span>Cross-Wiki:</span><span class="font-bold text-purple-400">+${b.crosswiki || 0}</span></div>
+                    <div class="flex justify-between gap-4"><span>No Wikidata:</span><span class="font-bold text-amber-400">+${b.nowikidata || 0}</span></div>
+                </div>
+            `;
 
             tr.innerHTML = `
                 <td class="px-6 py-5 text-center text-gray-600 font-mono text-xs">${index + 1}</td>
@@ -165,14 +183,100 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="px-6 py-5 text-gray-400 text-xs">${formatDate(res.last_edit_nl)}</td>
                 <td class="px-6 py-5 text-gray-500 text-xs hidden lg:table-cell">${res.days_since_edit}d</td>
                 <td class="px-6 py-5 text-center">
-                    <span class="inline-block px-3 py-1 rounded-full text-xs font-black border ${priorityClass}">
-                        ${res.priority_score}
-                    </span>
+                    <div class="relative group/score inline-block">
+                        <span class="inline-block px-3 py-1 rounded-full text-xs font-black border cursor-help ${priorityClass}">
+                            ${res.priority_score}
+                        </span>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/score:block z-50">
+                            <div class="bg-gray-950 border border-gray-800 rounded-lg p-3 shadow-2xl min-w-[140px]">
+                                ${breakdownHtml}
+                            </div>
+                            <div class="w-2 h-2 bg-gray-950 border-r border-b border-gray-800 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2"></div>
+                        </div>
+                    </div>
                 </td>
                 <td class="px-6 py-5">${reasonsHtml || '<span class="text-gray-600 italic text-xs">Stale content (tijd)</span>'}</td>
+                <td class="px-6 py-5 text-right">
+                    <button onclick="hideArticle('${res.title.replace(/'/g, "\\'")}')" class="p-1.5 text-gray-700 hover:text-red-400 transition-colors" title="Verberg dit artikel permanent">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    </button>
+                </td>
             `;
             resultsBody.appendChild(tr);
         });
+    }
+
+    // Hide article function (global for onclick)
+    window.hideArticle = async (title) => {
+        if (!confirm(`Weet je zeker dat je "${title}" permanent wilt verbergen voor toekomstige analyses?`)) return;
+        
+        try {
+            const res = await fetch('/api/hide', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ article: title })
+            });
+            if (res.ok) {
+                // Remove from current view
+                currentResults = currentResults.filter(r => r.title !== title);
+                renderResults(currentResults);
+            }
+        } catch (err) {
+            console.error('Failed to hide article', err);
+        }
+    };
+
+    // Unhide article
+    window.unhideArticle = async (title) => {
+        try {
+            const res = await fetch('/api/unhide', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ article: title })
+            });
+            if (res.ok) {
+                fetchHiddenArticles();
+            }
+        } catch (err) {
+            console.error('Failed to unhide article', err);
+        }
+    };
+
+    async function fetchHiddenArticles() {
+        showSection(hiddenArticlesSection);
+        hiddenArticlesBody.innerHTML = '<tr class="text-center"><td colspan="2" class="py-8 text-gray-500">Laden...</td></tr>';
+        
+        try {
+            const res = await fetch('/api/hidden');
+            const data = await res.json();
+            
+            if (data.hidden && data.hidden.length > 0) {
+                hiddenEmptyState.classList.add('hidden');
+                hiddenArticlesBody.innerHTML = data.hidden.map(title => `
+                    <tr class="hover:bg-gray-800/40 transition-colors">
+                        <td class="px-6 py-4 font-medium text-gray-300">${title}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="unhideArticle('${title.replace(/'/g, "\\'")}')" class="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors">
+                                Herstellen
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                hiddenArticlesBody.innerHTML = '';
+                hiddenEmptyState.classList.remove('hidden');
+            }
+        } catch (err) {
+            hiddenArticlesBody.innerHTML = '<tr class="text-center"><td colspan="2" class="py-8 text-red-400">Fout bij laden.</td></tr>';
+        }
+    }
+
+    if (viewHiddenBtn) {
+        viewHiddenBtn.addEventListener('click', fetchHiddenArticles);
+    }
+    
+    if (backToSearchFromHidden) {
+        backToSearchFromHidden.addEventListener('click', () => showSection(searchSection));
     }
 
     // Sorting
