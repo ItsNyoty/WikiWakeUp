@@ -22,6 +22,7 @@ import os
 import json
 import logging
 import yaml
+from werkzeug.middleware.proxy_fix import ProxyFix
 from requests_oauthlib import OAuth2Session
 from analyzer import analyze_user
 from database import init_db, log_analysis
@@ -38,7 +39,24 @@ init_db()
 app = flask.Flask(__name__)
 
 # --- Configuration ---
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", os.urandom(32))
+# Use ProxyFix to handle HTTPS behind Toolforge proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# Persistent Secret key for Flask sessions
+# We try to load it from a file so it stays the same across restarts
+secret_key_path = os.path.expanduser("~/secret.key")
+if os.path.exists(secret_key_path):
+    with open(secret_key_path, "rb") as f:
+        app.secret_key = f.read()
+else:
+    new_key = os.urandom(32)
+    app.secret_key = new_key
+    try:
+        with open(secret_key_path, "wb") as f:
+            f.write(new_key)
+        os.chmod(secret_key_path, 0o600)
+    except Exception as e:
+        logger.warning(f"Could not save secret key to {secret_key_path}: {e}")
 
 # Allow HTTP for local development (OAuth2 requires HTTPS in production)
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = os.environ.get("OAUTHLIB_INSECURE_TRANSPORT", "1")

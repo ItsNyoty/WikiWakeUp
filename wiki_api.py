@@ -77,7 +77,7 @@ DATE_PROPERTIES = {
 
 # Global rate limiter: track last request time per domain
 _last_request_time = {}
-_MIN_REQUEST_INTERVAL = 0.1  # 100ms between requests to same domain
+_MIN_REQUEST_INTERVAL = 0.05  # 50ms between requests to same domain
 
 
 def _rate_limit(url):
