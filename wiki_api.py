@@ -300,10 +300,15 @@ def check_crosswiki_growth(title, nl_last_edit, source_domain="nl.wikipedia.org"
     now = datetime.now(timezone.utc)
     six_months_ago = (now - timedelta(days=180)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    for lang, foreign_title in langlinks.items():
-        wiki_info = LANG_WIKIS.get(lang)
-        if not wiki_info:
+    for lang in compare_langs:
+        if lang == source_domain.split('.')[0]:
             continue
+        
+        foreign_title = langlinks.get(lang)
+        if not foreign_title:
+            continue
+            
+        api_url = f"https://{lang}.wikipedia.org/w/api.php"
 
         api_url = wiki_info["api"]
         lang_label = wiki_info["label"]

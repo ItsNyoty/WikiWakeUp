@@ -87,20 +87,20 @@ document.addEventListener('DOMContentLoaded', () => {
         let username = '';
         if (window.WIKI_CONFIG.loggedIn) {
             username = window.WIKI_CONFIG.username;
-        } else {
+        } else if (usernameInput) {
             username = usernameInput.value.trim();
         }
 
         if (!username) return;
 
-        const limit = limitSelect.value;
-        const top = topSelect.value;
-        const targetWiki = targetWikiSelect.value;
+        const limit = limitSelect ? limitSelect.value : 10000;
+        const top = topSelect ? topSelect.value : 100;
+        const targetWiki = targetWikiSelect ? targetWikiSelect.value : 'nl.wikipedia.org';
         
         // Get compare langs from settings
         const compareLangs = Array.from(document.querySelectorAll('input[name="compare_lang"]:checked'))
                                   .map(cb => cb.value)
-                                  .join(',');
+                                  .join(',') || 'en,de,fr,es';
 
         showSection(loadingSection);
         loadingBarFill.style.width = '0%';
