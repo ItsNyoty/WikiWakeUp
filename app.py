@@ -25,7 +25,9 @@ import yaml
 from werkzeug.middleware.proxy_fix import ProxyFix
 from requests_oauthlib import OAuth2Session
 from analyzer import analyze_user
-from database import init_db, log_analysis
+from database import init_db, log_analysis, get_admin_stats
+import threading
+import uuid
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,6 +39,11 @@ logger = logging.getLogger(__name__)
 init_db()
 
 app = flask.Flask(__name__)
+
+# Background task storage
+# In a production environment with multiple workers, this should be in Redis/DB.
+# On Toolforge with a single worker or shared memory, this works for simple cases.
+analysis_jobs = {}
 
 # --- Configuration ---
 # Use ProxyFix to handle HTTPS behind Toolforge proxy
@@ -221,6 +228,17 @@ def logout():
     return flask.redirect(flask.url_for("index"))
 
 
+@app.route("/admin")
+def admin():
+    """Admin dashboard for specific users."""
+    user = get_current_user()
+    if user != "ItsNyoty":
+        return "Toegang geweigerd.", 403
+    
+    stats = get_admin_stats()
+    return flask.render_template("admin.html", stats=stats)
+
+
 @app.route("/api/analyze")
 def api_analyze():
     """
@@ -244,34 +262,55 @@ def api_analyze():
         return flask.jsonify({"error": "Geen gebruikersnaam opgegeven. Log in of vul een naam in."}), 400
 
     try:
-        limit = min(int(flask.request.args.get("limit", 2500)), 5000)
+        limit = min(int(flask.request.args.get("limit", 2500)), 100000)
     except (ValueError, TypeError):
         limit = 2500
 
     try:
-        top = min(int(flask.request.args.get("top", 100)), 200)
+        top = min(int(flask.request.args.get("top", 100)), 1000)
     except (ValueError, TypeError):
         top = 100
 
-    try:
-        logger.info(f"Starting analysis for user: {username}")
-        results = analyze_user(username, max_contribs=limit, top_n=top)
-        logger.info(f"Analysis complete for {username}: {len(results)} articles flagged")
-        
-        # Log to database
-        try:
-            log_analysis(username, len(results), limit, top)
-        except Exception as db_e:
-            logger.warning(f"Failed to log to DB: {db_e}")
+    job_id = str(uuid.uuid4())
+    analysis_jobs[job_id] = {"status": "pending", "progress": 0, "message": "Wachten in wachtrij..."}
 
-        return flask.jsonify({
-            "username": username,
-            "total_flagged": len(results),
-            "articles": results,
-        })
-    except Exception as e:
-        logger.error(f"Analysis failed for {username}: {e}", exc_info=True)
-        return flask.jsonify({"error": f"Analyse mislukt: {str(e)}"}), 500
+    def run_analysis_task(jid, uname, lmt, tp):
+        try:
+            def progress_update(step, total_steps, msg):
+                analysis_jobs[jid]["progress"] = int((step / total_steps) * 100)
+                analysis_jobs[jid]["message"] = msg
+
+            analysis_jobs[jid]["status"] = "running"
+            results = analyze_user(uname, max_contribs=lmt, top_n=tp, progress_callback=progress_update)
+            
+            # Log to database
+            try:
+                log_analysis(uname, len(results), lmt, tp)
+            except Exception as db_e:
+                logger.warning(f"Failed to log to DB: {db_e}")
+
+            analysis_jobs[jid]["status"] = "completed"
+            analysis_jobs[jid]["results"] = results
+            analysis_jobs[jid]["progress"] = 100
+        except Exception as e:
+            logger.error(f"Job {jid} failed: {e}", exc_info=True)
+            analysis_jobs[jid]["status"] = "failed"
+            analysis_jobs[jid]["error"] = str(e)
+
+    thread = threading.Thread(target=run_analysis_task, args=(job_id, username, limit, top))
+    thread.start()
+
+    return flask.jsonify({"job_id": job_id})
+
+
+@app.route("/api/status/<job_id>")
+def api_status(job_id):
+    """Check the status of a background analysis job."""
+    job = analysis_jobs.get(job_id)
+    if not job:
+        return flask.jsonify({"error": "Taak niet gevonden"}), 404
+    
+    return flask.jsonify(job)
 
 
 if __name__ == "__main__":

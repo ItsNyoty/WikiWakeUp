@@ -92,3 +92,33 @@ def log_analysis(username, total_flagged, limit_count, top_count):
         logger.error(f"Failed to log analysis: {e}")
     finally:
         conn.close()
+
+
+def get_admin_stats():
+    """Get summary statistics for the admin dashboard."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        
+        # Total analyses
+        cursor.execute("SELECT COUNT(*) as total FROM analysis_logs")
+        total = cursor.fetchone()
+        
+        # Unique users
+        cursor.execute("SELECT COUNT(DISTINCT username) as unique_users FROM analysis_logs")
+        unique = cursor.fetchone()
+        
+        # Recent logs
+        cursor.execute("SELECT * FROM analysis_logs ORDER BY timestamp DESC LIMIT 50")
+        recent = cursor.fetchall()
+        
+        return {
+            "total_analyses": total['total'] if isinstance(total, dict) else total[0],
+            "unique_users": unique['unique_users'] if isinstance(unique, dict) else unique[0],
+            "recent_logs": recent
+        }
+    except Exception as e:
+        logger.error(f"Failed to get admin stats: {e}")
+        return None
+    finally:
+        conn.close()

@@ -72,6 +72,28 @@ DATE_PROPERTIES = {
     "P488": "Voorzitter (chairperson)",
     "P6": "Regeringsleider (head of government)",
     "P35": "Staatshoofd (head of state)",
+    # External Links & Media
+    "P856": "Officiële website",
+    "P1581": "Officiële blog",
+    "P2013": "Facebook-identificatiecode",
+    "P2002": "X (Twitter) gebruikersnaam",
+    "P2003": "Instagram-gebruikersnaam",
+    "P1651": "YouTube video-identificatiecode",
+    "P727": "WorldCat Identities-identificatiecode",
+    # Affiliations & Honors
+    "P166": "Onderscheiding ontvangen",
+    "P1344": "Deelnemer aan",
+    "P6379": "Heeft werk in de collectie",
+    # Geography
+    "P625": "Geografische coördinaten",
+    "P131": "Gelegen in de administratieve eenheid",
+    "P2044": "Hoogte boven zeeniveau",
+    # Organizational
+    "P749": "Moederorganisatie",
+    "P355": "Dochterorganisatie",
+    "P199": "Gelieerde onderneming",
+    "P112": "Oprichter",
+    "P169": "Chief Executive Officer",
 }
 
 
