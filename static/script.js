@@ -152,13 +152,12 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (res.priority_score > 20) priorityClass = 'text-blue-400 bg-blue-500/10 border-blue-500/20';
 
             const reasonsHtml = res.reasons.map(r => {
-                let badgeClass = 'bg-gray-800 text-gray-400';
-                if (r.type === 'wikidata') badgeClass = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-                if (r.type === 'crosswiki') badgeClass = 'bg-purple-500/10 text-purple-400 border border-purple-500/20';
-                if (r.type === 'nowikidata') badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+                let badgeClass = 'bg-gray-100 text-gray-700 border-gray-200';
+                if (r.type === 'wikidata') badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                if (r.type === 'crosswiki') badgeClass = 'bg-purple-50 text-purple-700 border-purple-200';
+                if (r.type === 'nowikidata') badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
                 
-                const pointsText = r.points ? ` (+${r.points})` : '';
-                return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold mr-1.5 mb-1 ${badgeClass}">${r.msg}${pointsText}</span>`;
+                return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold mr-1.5 mb-1 border ${badgeClass}">${r.msg}</span>`;
             }).join('');
 
             // Score breakdown tooltip content

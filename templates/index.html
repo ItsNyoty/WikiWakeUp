@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="nl" class="dark">
+<html lang="nl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WikiWakeUp — Verouderde artikelen opsporen</title>
+    <title>WikiWakeUp — Wikimedia Codex Style</title>
     <meta name="description" content="WikiWakeUp identificeert Wikipedia-artikelen die toe zijn aan een inhoudelijke update.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,22 +12,36 @@
     <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: { 
                 extend: { 
                     fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
                     colors: {
-                        gray: {
-                            950: '#030712',
-                            900: '#111827',
-                            800: '#1f2937'
-                        }
+                        'wm-blue': '#36c',
+                        'wm-blue-hover': '#447ff5',
+                        'wm-red': '#d33',
+                        'wm-gray-base': '#202122',
+                        'wm-gray-secondary': '#72777d',
+                        'wm-gray-border': '#a2a9b1',
+                        'wm-bg-base': '#f8f9fa',
                     }
                 } 
             }
         }
     </script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Codex-inspired overrides */
+        body { background-color: #f8f9fa; color: #202122; }
+        .cdx-card { background: white; border: 1px solid #a2a9b1; border-radius: 2px; }
+        .cdx-button--progressive { background-color: #36c; color: white; border-radius: 2px; font-weight: 700; transition: background-color 0.1s; }
+        .cdx-button--progressive:hover { background-color: #447ff5; }
+        .cdx-button--quiet { color: #36c; background: transparent; font-weight: 700; }
+        .cdx-button--quiet:hover { background: rgba(51, 102, 204, 0.1); }
+        .cdx-text-input { border: 1px solid #a2a9b1; border-radius: 2px; padding: 8px 12px; transition: border-color 0.2s, box-shadow 0.2s; }
+        .cdx-text-input:focus { border-color: #36c; box-shadow: inset 0 0 0 1px #36c; outline: none; }
+        .cdx-table th { background-color: #eaecf0; border-bottom: 1px solid #a2a9b1; color: #202122; font-weight: 700; }
+        .cdx-table td { border-bottom: 1px solid #eaecf0; }
+        .cdx-badge { border-radius: 2px; font-weight: 700; padding: 2px 6px; font-size: 0.75rem; }
+    </style>
     <script>
         window.WIKI_CONFIG = {
             oauthEnabled: {{ 'true' if oauth_enabled else 'false' }},
@@ -36,57 +50,40 @@
         };
     </script>
 </head>
-<body class="bg-gray-950 text-gray-200 font-sans min-h-screen antialiased selection:bg-blue-500/30">
-
-    <!-- Subtle Background Grid -->
-    <div class="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(#1f2937_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-20"></div>
+<body class="font-sans antialiased">
 
     <!-- Header -->
-    <nav class="relative z-50 border-b border-gray-800 bg-gray-950/70 backdrop-blur-md sticky top-0">
+    <nav class="border-b border-wm-gray-border bg-white sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <a href="/" class="flex items-center gap-3 group transition-transform active:scale-95">
-                    <div class="flex-shrink-0 w-9 h-9 bg-gray-800 border border-gray-700 rounded-xl flex items-center justify-center shadow-inner group-hover:border-gray-600 transition-colors">
-                        <svg class="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    </div>
+            <div class="flex items-center justify-between h-14">
+                <a href="/" class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-wm-blue rounded-sm flex items-center justify-center text-white font-black text-xl">W</div>
                     <div>
-                        <h1 class="text-base font-bold text-white tracking-tight leading-none">WikiWakeUp</h1>
-                        <p class="text-[10px] text-gray-500 font-medium uppercase tracking-widest mt-1">Stale Content Finder</p>
+                        <h1 class="text-lg font-bold text-wm-gray-base leading-none">WikiWakeUp</h1>
                     </div>
                 </a>
                 
                 <div class="flex items-center gap-4">
                     {% if logged_in %}
-                    <button id="viewHiddenBtn" class="hidden sm:flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-white font-bold px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg transition-all">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                        Verborgen
+                    <button id="viewHiddenBtn" class="cdx-button--quiet px-3 py-2 text-xs">
+                        Verborgen artikelen
                     </button>
                     {% endif %}
 
                     {% if username == "ItsNyoty" %}
-                    <a href="/admin" class="hidden md:flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 font-bold px-3 py-1.5 bg-purple-500/5 border border-purple-500/20 rounded-lg transition-all">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                        Dashboard
+                    <a href="/admin" class="text-xs font-bold text-wm-gray-secondary hover:text-wm-blue px-3 py-2 border border-wm-gray-border rounded-sm bg-wm-bg-base">
+                        Admin Dashboard
                     </a>
                     {% endif %}
 
-                    <!-- Auth buttons -->
                     {% if oauth_enabled %}
                         {% if logged_in %}
-                            <div class="flex items-center gap-3">
-                                <div class="hidden sm:flex flex-col items-end">
-                                    <span class="text-[10px] text-gray-500 font-bold uppercase">Ingelogd als</span>
-                                    <span class="text-xs text-blue-400 font-semibold">{{ username }}</span>
-                                </div>
-                                <a href="/logout" class="text-[11px] font-bold px-3 py-1.5 bg-gray-900 hover:bg-red-900/20 border border-gray-800 hover:border-red-900/40 rounded-lg text-gray-400 hover:text-red-400 transition-all">
-                                    Uitloggen
-                                </a>
+                            <div class="flex items-center gap-4 border-l border-wm-gray-border pl-4">
+                                <span class="text-xs text-wm-gray-secondary">Ingelogd als <strong>{{ username }}</strong></span>
+                                <a href="/logout" class="text-xs font-bold text-wm-red hover:underline">Uitloggen</a>
                             </div>
                         {% else %}
-                            <a href="/login" class="inline-flex items-center gap-2 text-xs px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-lg shadow-blue-600/10 transition-all active:scale-95">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                                Inloggen
-                            </a>
+                            <a href="/login" class="cdx-button--progressive px-4 py-2 text-xs">Inloggen</a>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -94,135 +91,87 @@
         </div>
     </nav>
 
-    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         <!-- Search Section -->
-        <section id="searchSection" class="max-w-2xl mx-auto mb-12">
-            <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-4 opacity-10">
-                    <svg class="w-32 h-32 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+        <section id="searchSection" class="max-w-3xl mx-auto">
+            <div class="cdx-card p-8 sm:p-12 shadow-sm">
+                <div class="mb-10">
+                    <h2 class="text-2xl font-serif font-bold text-wm-gray-base mb-4">Artikelen die een update nodig hebben</h2>
+                    <p class="text-wm-gray-secondary text-sm leading-relaxed">
+                        WikiWakeUp analyseert bijdragen van gebruikers en vergelijkt artikelen met Wikidata en andere taalversies om verouderde informatie op te sporen.
+                    </p>
                 </div>
 
-                <div class="relative z-10">
-                    <div class="mb-10">
-                        {% if oauth_enabled and logged_in %}
-                            <h2 class="text-3xl font-extrabold text-white tracking-tight mb-4">
-                                Welkom terug, <span class="text-blue-400">{{ username }}</span>
-                            </h2>
-                            <p class="text-gray-400 text-base leading-relaxed">
-                                Klaar om je eigen artikelen te controleren? We scannen je bijdragen en vergelijken ze met externe bronnen om te zien wat toe is aan een update.
-                            </p>
-                        {% elif oauth_enabled and not logged_in %}
-                            <h2 class="text-3xl font-extrabold text-white tracking-tight mb-4">
-                                Vind verouderde artikelen
-                            </h2>
-                            <p class="text-gray-400 text-base leading-relaxed mb-8">
-                                Log in met je Wikipedia-account voor een persoonlijke analyse, of voer hieronder een gebruikersnaam in om te beginnen.
-                            </p>
-                            <a href="/login" class="inline-flex items-center gap-3 px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/20 transition-all active:scale-95 text-sm">
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                                Inloggen met Wikipedia
-                            </a>
-                            <div class="flex items-center gap-4 my-8">
-                                <div class="flex-1 border-t border-gray-800"></div>
-                                <span class="text-[10px] font-black uppercase tracking-widest text-gray-600">Of handmatig</span>
-                                <div class="flex-1 border-t border-gray-800"></div>
-                            </div>
-                        {% else %}
-                            <h2 class="text-3xl font-extrabold text-white tracking-tight mb-4">Gebruiker analyseren</h2>
-                            <p class="text-gray-400 text-base leading-relaxed mb-10">
-                                Voer een Wikipedia-gebruikersnaam in om artikelen te vinden die een inhoudelijke update nodig hebben.
-                            </p>
-                        {% endif %}
+                <form id="analyzeForm" class="space-y-8">
+                    {% if not (oauth_enabled and logged_in) %}
+                    <div>
+                        <label for="usernameInput" class="block text-sm font-bold text-wm-gray-base mb-2">Wikipedia Gebruikersnaam</label>
+                        <input type="text" id="usernameInput" placeholder="Bijv. Ellywa"
+                            class="cdx-text-input w-full text-sm"
+                            {% if oauth_enabled and not logged_in %}{% else %}required{% endif %}>
+                    </div>
+                    {% endif %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="limitSelect" class="block text-sm font-bold text-wm-gray-base mb-2">Max. aantal bijdragen</label>
+                            <select id="limitSelect" class="cdx-text-input w-full text-sm bg-white cursor-pointer">
+                                <option value="1000">1.000 bijdragen</option>
+                                <option value="5000">5.000 bijdragen</option>
+                                <option value="10000" selected>10.000 bijdragen</option>
+                                <option value="50000">50.000 bijdragen</option>
+                                <option value="100000">100.000 bijdragen</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="topSelect" class="block text-sm font-bold text-wm-gray-base mb-2">Scan top artikelen</label>
+                            <select id="topSelect" class="cdx-text-input w-full text-sm bg-white cursor-pointer">
+                                <option value="50">50 artikelen</option>
+                                <option value="100" selected>100 artikelen</option>
+                                <option value="250">250 artikelen</option>
+                                <option value="500">500 artikelen</option>
+                                <option value="1000">1.000 artikelen</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <form id="analyzeForm">
-                        <div class="space-y-6">
-                            {% if not (oauth_enabled and logged_in) %}
-                            <div class="relative">
-                                <label for="usernameInput" class="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Gebruikersnaam</label>
-                                <div class="relative">
-                                    <input type="text" id="usernameInput" placeholder="Bijv. Ellywa" autocomplete="off"
-                                        class="block w-full pl-5 pr-12 py-4 bg-gray-950 border border-gray-800 rounded-2xl text-white placeholder-gray-600 text-base focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none"
-                                        {% if oauth_enabled and not logged_in %}{% else %}required{% endif %}>
-                                    <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-700">
-                                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endif %}
-
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label for="limitSelect" class="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Aantal Bijdragen</label>
-                                    <select id="limitSelect" class="block w-full px-4 py-3 bg-gray-950 border border-gray-800 rounded-xl text-gray-300 text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none appearance-none cursor-pointer">
-                                        <option value="1000">1.000</option>
-                                        <option value="5000">5.000</option>
-                                        <option value="10000" selected>10.000</option>
-                                        <option value="50000">50.000</option>
-                                        <option value="100000">100.000</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="topSelect" class="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Artikelen Scannen</label>
-                                    <select id="topSelect" class="block w-full px-4 py-3 bg-gray-950 border border-gray-800 rounded-xl text-gray-300 text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all outline-none appearance-none cursor-pointer">
-                                        <option value="50">50</option>
-                                        <option value="100" selected>100</option>
-                                        <option value="250">250</option>
-                                        <option value="500">500</option>
-                                        <option value="1000">1.000</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <button type="submit" id="submitBtn"
-                                class="w-full flex items-center justify-center gap-3 px-8 py-4.5 bg-white hover:bg-gray-100 text-gray-950 text-base font-extrabold rounded-2xl shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span>Start Analyse</span>
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="pt-4">
+                        <button type="submit" id="submitBtn" class="cdx-button--progressive w-full py-3 text-sm">
+                            Analyse starten
+                        </button>
+                    </div>
+                </form>
             </div>
         </section>
 
         <!-- Loading Section -->
-        <section class="hidden max-w-xl mx-auto" id="loadingSection">
-            <div class="bg-gray-900 border border-gray-800 rounded-3xl p-10 shadow-2xl text-center">
+        <section class="hidden max-w-2xl mx-auto" id="loadingSection">
+            <div class="cdx-card p-12 text-center shadow-sm">
                 <div class="flex justify-center mb-8">
-                    <div class="relative w-20 h-20">
-                        <div class="absolute inset-0 rounded-full border-4 border-gray-800 border-t-blue-500 animate-spin"></div>
-                        <div class="absolute inset-3 rounded-full border-4 border-gray-800 border-b-purple-500 animate-spin-reverse"></div>
-                    </div>
+                    <div class="w-12 h-12 border-4 border-wm-gray-border border-t-wm-blue rounded-full animate-spin"></div>
                 </div>
-                <h3 class="text-xl font-bold text-white mb-3" id="loadingTitle">Analyse wordt voorbereid...</h3>
-                <p class="text-sm text-gray-500 mb-8 max-w-sm mx-auto" id="loadingMessage">Dit kan even duren bij grote hoeveelheden data.</p>
+                <h3 class="text-xl font-bold text-wm-gray-base mb-2" id="loadingTitle">Analyse bezig...</h3>
+                <p class="text-sm text-wm-gray-secondary mb-10" id="loadingMessage">Even geduld a.u.b.</p>
                 
-                <div class="relative pt-1">
-                    <div class="flex mb-2 items-center justify-between">
-                        <div>
-                            <span class="text-[10px] font-bold inline-block py-1 px-2 uppercase rounded-full text-blue-400 bg-blue-500/10" id="progressPercent">0%</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-[10px] font-bold inline-block text-gray-600 uppercase tracking-widest" id="progressStep">STAP 0/4</span>
-                        </div>
+                <div class="max-w-md mx-auto">
+                    <div class="flex justify-between text-xs font-bold text-wm-gray-secondary mb-2 uppercase tracking-wide">
+                        <span id="progressStep">STAP 0/4</span>
+                        <span id="progressPercent">0%</span>
                     </div>
-                    <div class="overflow-hidden h-2 mb-4 text-xs flex rounded-full bg-gray-800">
-                        <div id="loadingBarFill" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+                    <div class="w-full bg-wm-bg-base border border-wm-gray-border h-3 p-0.5">
+                        <div id="loadingBarFill" class="bg-wm-blue h-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Error Section -->
-        <section class="hidden max-w-xl mx-auto" id="errorSection">
-            <div class="bg-gray-900 border border-red-900/20 rounded-3xl p-10 shadow-2xl text-center">
-                <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
-                    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2">Er ging iets mis</h3>
-                <p class="text-sm text-gray-400 mb-8" id="errorMessage"></p>
-                <button id="retryBtn" class="px-8 py-3 bg-gray-800 hover:bg-gray-700 text-white text-sm font-bold rounded-xl transition-all">
+        <section class="hidden max-w-2xl mx-auto" id="errorSection">
+            <div class="cdx-card p-12 text-center border-wm-red shadow-sm">
+                <h3 class="text-xl font-bold text-wm-red mb-4">Er is een fout opgetreden</h3>
+                <p class="text-sm text-wm-gray-secondary mb-8" id="errorMessage"></p>
+                <button id="retryBtn" class="cdx-button--progressive px-8 py-3 text-sm">
                     Opnieuw proberen
                 </button>
             </div>
@@ -230,136 +179,73 @@
 
         <!-- Hidden Articles Section -->
         <section class="hidden space-y-6" id="hiddenArticlesSection">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-black text-white tracking-tight">Verborgen Artikelen</h2>
-                    <p class="text-sm text-gray-500 font-medium">Artikelen die je permanent hebt verborgen voor analyses.</p>
-                </div>
-                <button id="backToSearchFromHidden" class="text-xs font-bold px-4 py-2 bg-gray-900 border border-gray-800 rounded-xl hover:text-blue-400 transition-all">
-                    Terug naar Home
-                </button>
+            <div class="flex items-center justify-between border-b border-wm-gray-border pb-4">
+                <h2 class="text-xl font-bold text-wm-gray-base tracking-tight">Verborgen artikelen</h2>
+                <button id="backToSearchFromHidden" class="cdx-button--quiet text-sm">Terug naar Home</button>
             </div>
-            <div class="bg-gray-900 border border-gray-800 rounded-3xl shadow-2xl overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead class="bg-gray-950 border-b border-gray-800 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                            <tr>
-                                <th class="px-6 py-5">Artikelnaam</th>
-                                <th class="px-6 py-5 text-right">Acties</th>
-                            </tr>
-                        </thead>
-                        <tbody id="hiddenArticlesBody" class="divide-y divide-gray-800/50"></tbody>
-                    </table>
-                </div>
-                <div id="hiddenEmptyState" class="hidden py-12 text-center text-gray-600 italic text-sm">
+            <div class="cdx-card shadow-sm overflow-hidden">
+                <table class="w-full text-sm text-left cdx-table">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-4">Artikelnaam</th>
+                            <th class="px-6 py-4 text-right">Actie</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hiddenArticlesBody"></tbody>
+                </table>
+                <div id="hiddenEmptyState" class="hidden py-12 text-center text-wm-gray-secondary italic text-sm">
                     Geen verborgen artikelen gevonden.
                 </div>
             </div>
         </section>
 
         <!-- Results Section -->
-        <section class="hidden space-y-6 animate-fade-in" id="resultsSection">
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <section class="hidden space-y-8" id="resultsSection">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-wm-gray-border">
                 <div>
-                    <h2 class="text-2xl font-black text-white tracking-tight" id="resultsTitle">Resultaten</h2>
-                    <p class="text-sm text-gray-500 font-medium" id="resultsSubtitle"></p>
+                    <h2 class="text-2xl font-serif font-bold text-wm-gray-base" id="resultsTitle">Resultaten</h2>
+                    <p class="text-sm text-wm-gray-secondary mt-1" id="resultsSubtitle"></p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-1 flex gap-1">
-                        <button id="sortPriority" data-sort="priority" class="sort-btn active px-4 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all bg-blue-600 text-white">Prioriteit</button>
-                        <button id="sortDate" data-sort="date" class="sort-btn px-4 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all text-gray-500 hover:text-gray-300">Datum</button>
+                    <div class="flex bg-wm-bg-base border border-wm-gray-border p-1 rounded-sm">
+                        <button id="sortPriority" class="sort-btn px-4 py-1.5 text-xs font-bold rounded-sm transition-all bg-wm-blue text-white">Prioriteit</button>
+                        <button id="sortDate" class="sort-btn px-4 py-1.5 text-xs font-bold rounded-sm transition-all text-wm-gray-secondary hover:bg-white">Datum</button>
                     </div>
-                    <button id="newSearchBtn" class="p-2.5 bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl text-gray-400 hover:text-white transition-all shadow-lg">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <button id="newSearchBtn" class="cdx-button--quiet p-2 border border-wm-gray-border rounded-sm bg-white" title="Nieuwe zoekopdracht">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </button>
                 </div>
             </div>
 
-            <div class="bg-gray-900 border border-gray-800 rounded-3xl shadow-2xl overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left" id="resultsTable">
-                        <thead class="bg-gray-950 border-b border-gray-800 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                            <tr>
-                                <th class="px-6 py-5 text-center w-16">#</th>
-                                <th class="px-6 py-5">Artikelnaam</th>
-                                <th class="px-6 py-5">Laatste NL-update</th>
-                                <th class="px-6 py-5 hidden lg:table-cell">Dagen</th>
-                                <th class="px-6 py-5 text-center">
-                                    <div class="flex items-center justify-center gap-1.5">
-                                        Score
-                                        <button data-modal-target="scoreModal" data-modal-toggle="scoreModal" class="text-gray-600 hover:text-gray-400 transition-colors">
-                                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                                        </button>
-                                    </div>
-                                </th>
-                                <th class="px-6 py-5">Analyse-redenen</th>
-                                <th class="px-6 py-5 text-right w-20">Acties</th>
-                            </tr>
-                        </thead>
-                        <tbody id="resultsBody" class="divide-y divide-gray-800/50"></tbody>
-                    </table>
-                </div>
+            <div class="cdx-card shadow-sm overflow-x-auto">
+                <table class="w-full text-sm text-left cdx-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-4 text-center w-12">#</th>
+                            <th class="px-6 py-4">Artikel</th>
+                            <th class="px-6 py-4">Laatste NL update</th>
+                            <th class="px-6 py-4 hidden lg:table-cell">Dagen</th>
+                            <th class="px-6 py-4 text-center">Score</th>
+                            <th class="px-6 py-4">Analyse-redenen</th>
+                            <th class="px-6 py-4 text-right w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody" class="bg-white"></tbody>
+                </table>
             </div>
 
             <div class="hidden py-24 text-center" id="emptyState">
-                <div class="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-500">
-                    <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
-                </div>
-                <h3 class="text-2xl font-bold text-white mb-2">Helemaal up-to-date!</h3>
-                <p class="text-gray-500">Geen van de gescande artikelen heeft op dit moment een update nodig.</p>
+                <p class="text-lg font-bold text-wm-gray-secondary">Geen artikelen gevonden die een update nodig hebben.</p>
             </div>
         </section>
     </main>
 
-    <!-- Score Explanation Modal -->
-    <div id="scoreModal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-[100] justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-        <div class="relative p-4 w-full max-w-lg max-h-full">
-            <div class="relative bg-gray-900 border border-gray-800 rounded-3xl shadow-2xl">
-                <div class="flex items-center justify-between p-6 border-b border-gray-800">
-                    <h3 class="text-lg font-bold text-white uppercase tracking-tight">Hoe wordt de score berekend?</h3>
-                    <button type="button" class="text-gray-500 hover:text-white transition-colors" data-modal-hide="scoreModal">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="p-6 space-y-6 text-sm text-gray-400 leading-relaxed">
-                    <p>De score bepaalt de prioriteit van een artikel. Hoe hoger de score, hoe dringender een inhoudelijke update gewenst is.</p>
-                    <div class="space-y-4">
-                        <div class="flex gap-4">
-                            <div class="flex-shrink-0 w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-400 font-bold">1-40</div>
-                            <div>
-                                <h4 class="text-white font-bold mb-1">Staleness (Tijd)</h4>
-                                <p>Punten op basis van hoe lang geleden de laatste bewerking op NL-Wiki was (logaritmisch).</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-4">
-                            <div class="flex-shrink-0 w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-400 font-bold">+30</div>
-                            <div>
-                                <h4 class="text-white font-bold mb-1">Wikidata Update</h4>
-                                <p>Als er op Wikidata recente wijzigingen zijn in belangrijke eigenschappen (properties).</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-4">
-                            <div class="flex-shrink-0 w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-400 font-bold">+15</div>
-                            <div>
-                                <h4 class="text-white font-bold mb-1">Cross-Wiki Groei</h4>
-                                <p>Als de EN, DE, FR of ES versie aanzienlijk gegroeid is terwijl de NL versie stilstaat.</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-4">
-                            <div class="flex-shrink-0 w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-400 font-bold">+15</div>
-                            <div>
-                                <h4 class="text-white font-bold mb-1">Geen Wikidata</h4>
-                                <p>Als een artikel nog niet gekoppeld is aan een Wikidata-item.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <footer class="border-t border-wm-gray-border bg-wm-bg-base py-10 mt-10">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-xs text-wm-gray-secondary leading-loose">
+                WikiWakeUp &middot; Gebouwd voor Wikimedia Toolforge &middot; <a href="https://www.mediawiki.org/wiki/Codex" target="_blank" class="text-wm-blue hover:underline">Codex Design System</a>
+            </p>
         </div>
-    </div>
-
-    <footer class="relative z-10 border-t border-gray-900 py-12 text-center">
-        <p class="text-[10px] font-black uppercase tracking-widest text-gray-700">WikiWakeUp Tool &middot; MediaWiki API &middot; Wikidata</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
