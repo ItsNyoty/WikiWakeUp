@@ -186,11 +186,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="inline-block px-3 py-1 rounded-sm text-xs font-black border cursor-help ${priorityColor}">
                             ${res.priority_score}
                         </span>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/score:block z-50">
+                        <div class="absolute ${index === 0 ? 'top-full mt-2' : 'bottom-full mb-2'} left-1/2 -translate-x-1/2 hidden group-hover/score:block z-50">
                             <div class="bg-white border border-wm-gray-border rounded p-3 shadow-2xl min-w-[140px]">
                                 ${breakdownHtml}
                             </div>
-                            <div class="w-2 h-2 bg-white border-r border-b border-wm-gray-border rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2"></div>
+                            <div class="w-2 h-2 bg-white ${index === 0 ? 'border-l border-t -top-1' : 'border-r border-b -bottom-1'} border-wm-gray-border rotate-45 absolute left-1/2 -translate-x-1/2"></div>
                         </div>
                     </div>
                 </td>
