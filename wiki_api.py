@@ -308,13 +308,16 @@ def check_crosswiki_growth(title, nl_last_edit, source_domain="nl.wikipedia.org"
         if not foreign_title:
             continue
             
-        api_url = f"https://{lang}.wikipedia.org/w/api.php"
+        wiki_info = LANG_WIKIS.get(lang)
+        if not wiki_info:
+            continue
 
         api_url = wiki_info["api"]
         lang_label = wiki_info["label"]
+        foreign_domain = f"{lang}.wikipedia.org"
 
         # Get current size of the foreign article
-        foreign_current = get_article_last_revision(foreign_title, api_url)
+        foreign_current = get_article_last_revision(foreign_title, domain=foreign_domain)
         if not foreign_current:
             continue
 
@@ -329,7 +332,7 @@ def check_crosswiki_growth(title, nl_last_edit, source_domain="nl.wikipedia.org"
 
             if growth >= 0.20:
                 # Check if NL has been stale (no edit since 6 months)
-                nl_edit_dt = dateparser.parse(nl_last_edit_ts)
+                nl_edit_dt = dateparser.parse(nl_last_edit)
                 six_months_ago_dt = now - timedelta(days=180)
 
                 if nl_edit_dt < six_months_ago_dt:
