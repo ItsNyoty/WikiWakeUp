@@ -51,7 +51,7 @@ def analyze_article(article, target_domain="nl.wikipedia.org", compare_langs=Non
 
         # Wikidata sync check
         try:
-            wikidata_reasons = check_wikidata_updates(title, nl_last_edit)
+            wikidata_reasons = check_wikidata_updates(title, nl_last_edit, domain=target_domain)
             reasons.extend(wikidata_reasons)
         except Exception as e:
             logger.warning(f"Wikidata check failed for {title}: {e}")

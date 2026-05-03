@@ -348,29 +348,29 @@ def check_crosswiki_growth(title, nl_last_edit, source_domain="nl.wikipedia.org"
     return reasons
 
 
-def get_wikidata_entity_id(title):
-    """Get the Wikidata entity ID for a NL Wikipedia article."""
+def get_wikidata_entity_id(title, domain="nl.wikipedia.org"):
+    """Get the Wikidata entity ID for an article on a specific Wikipedia domain."""
+    api_url = f"https://{domain}/w/api.php"
     params = {
         "action": "query",
         "titles": title,
         "prop": "pageprops",
         "ppprop": "wikibase_item",
     }
-    data = _api_get(NL_API, params)
+    data = _api_get(api_url, params)
     pages = data.get("query", {}).get("pages", {})
     for page_id, page_data in pages.items():
         return page_data.get("pageprops", {}).get("wikibase_item")
     return None
 
 
-def check_wikidata_updates(title, nl_last_edit_ts):
+def check_wikidata_updates(title, last_edit_ts, domain="nl.wikipedia.org"):
     """
-    Check if Wikidata has newer date-based statements than the NL article's
-    last edit. E.g., if P570 (death date) was added after the NL article
-    was last edited.
+    Check if Wikidata has newer date-based statements than the article's
+    last edit.
     """
     reasons = []
-    entity_id = get_wikidata_entity_id(title)
+    entity_id = get_wikidata_entity_id(title, domain=domain)
     if not entity_id:
         # Flag as "no Wikidata item linked"
         reasons.append({
@@ -393,7 +393,7 @@ def check_wikidata_updates(title, nl_last_edit_ts):
     entity = entities.get(entity_id, {})
     claims = entity.get("claims", {})
 
-    nl_edit_dt = dateparser.parse(nl_last_edit_ts)
+    nl_edit_dt = dateparser.parse(last_edit_ts)
 
     for prop_id, prop_label in DATE_PROPERTIES.items():
         if prop_id not in claims:
